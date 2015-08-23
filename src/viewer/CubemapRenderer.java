@@ -117,6 +117,14 @@ public class CubemapRenderer extends Thread {
         yRange = windowTop * 2.0f;
     }
     
+    public int getWidth(){
+        return rp.width;
+    }
+    
+    public int getHeight(){
+        return rp.height;
+    }
+    
     public void setWindowSize(int width, int height){
         if(width <= 0 || height <= 0){
             throw new IllegalArgumentException("Invalid window size");
@@ -347,5 +355,74 @@ public class CubemapRenderer extends Thread {
             }
         }
     }
-    
+
+    public static final BufferedImage render(Cubemap cubemap, Matrix33 orientation, float fov, boolean showReference, boolean lerp, int width, int height){
+        if(cubemap == null){
+            throw new NullPointerException();
+        }
+        if(width <= 0 || height <= 0){
+            throw new IllegalArgumentException("Invalid window size");
+        }
+        if(orientation == null){
+            throw new NullPointerException();
+        }
+        if(fov <= 2.0f || fov >= 175.0f){
+            throw new IllegalArgumentException("Invalid fov");
+        }
+        float windowLeft, windowRight, xRange;
+        float windowBottom, windowTop, yRange;
+        float projDistance = 5.0f;
+        // Calculate projection
+        float aspectRatio = (float)width / (float)height;
+        windowRight = (float) (projDistance * Math.tan(Math.toRadians(fov) / 2.0));
+        windowLeft = -windowRight;
+        xRange = windowRight * 2.0f;
+        windowTop = windowRight / aspectRatio;
+        windowBottom = -windowTop;
+        yRange = windowTop * 2.0f;
+        // Allocate image
+        BufferedImage outputImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        WritableRaster wr = outputImage.getRaster();
+        DataBuffer db = wr.getDataBuffer();
+        DataBufferInt dbi = (DataBufferInt) db;
+        int buffer[] = dbi.getData();
+        //Render
+        Vector3D inDir = new Vector3D();
+        Vector2D nc = new Vector2D();
+        inDir.z = projDistance;
+        Vector3D outDir = new Vector3D();
+        float oneOverWidth = 1.0f / width, oneOverHeight = 1.0f / height;
+        if (!showReference) {
+            for (int y = 0; y < height; y++) {
+                nc.y = ((height - 1 - y) + 0.5f) * oneOverHeight;
+                inDir.y = windowBottom + yRange * nc.y;
+                for (int x = 0; x < width; x++) {
+                    nc.x = (x + 0.5f) * oneOverWidth;
+                    inDir.x = windowLeft + xRange * nc.x;
+                    orientation.mult(inDir, outDir);
+                    int color = cubemap.sampleCubemap(outDir, lerp);
+                    buffer[y * width + x] = color;
+                }
+            }
+        } else {
+            for (int y = 0; y < height; y++) {
+                nc.y = ((height - 1 - y) + 0.5f) * oneOverHeight;
+                inDir.y = windowBottom + yRange * nc.y;
+                for (int x = 0; x < width; x++) {
+                    nc.x = (x + 0.5f) * oneOverWidth;
+                    inDir.x = windowLeft + xRange * nc.x;
+                    orientation.mult(inDir, outDir);
+                    int reference = cubemapReference.sampleCubemap(outDir, false);
+                    if(((reference >> 24) & 0xFF) != 0){
+                        buffer[y * width + x] = reference;
+                    }else{
+                        int color = cubemap.sampleCubemap(outDir, lerp);
+                        buffer[y * width + x] = color;
+                    }
+                }
+            }
+        }
+        return outputImage;
+    }
+
 }

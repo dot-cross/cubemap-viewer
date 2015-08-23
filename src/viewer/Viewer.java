@@ -6,10 +6,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.JFrame;
 import java.io.File;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 import javax.swing.ButtonGroup;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
@@ -20,6 +25,10 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.plaf.basic.BasicFileChooserUI;
+import math.Matrix33;
 
 /**
  *
@@ -29,6 +38,7 @@ public class Viewer extends JFrame {
 
     private CubemapPanel cubemapPanel;
     private JFileChooser openFileChooser;
+    private SaveImageFileChooser saveFileChooser;
     private JMenuBar menuBar;
     private JMenu fileMenu;
     private JMenuItem openFile;
@@ -54,6 +64,8 @@ public class Viewer extends JFrame {
         });
         openFileChooser = new JFileChooser(System.getProperty("user.home"));
         openFileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        String userHome = System.getProperty("user.home");
+        saveFileChooser = new SaveImageFileChooser(userHome);
         menuBar = new JMenuBar();
         fileMenu = new JMenu("File");
         openFile = new JMenuItem("Open");
@@ -65,6 +77,15 @@ public class Viewer extends JFrame {
                 if(returnValue == JFileChooser.APPROVE_OPTION){
                     File selectedDir = openFileChooser.getSelectedFile();
                     try {
+                        Cubemap previousCubemap = cubemapPanel.getCubemap();
+                        if(previousCubemap == null){
+                            saveImage.setEnabled(true);
+                            showReference.setEnabled(true);
+                            showInfo.setEnabled(true);
+                            nearest.setEnabled(true);
+                            bilinear.setEnabled(true);
+                            resetOrientation.setEnabled(true);
+                        }
                         Cubemap cubemap = Cubemap.loadCubemap(selectedDir.getAbsolutePath());
                         cubemapPanel.setCubemap(cubemap);
                     } catch (Exception ex) {
@@ -74,12 +95,16 @@ public class Viewer extends JFrame {
             }
         });
         fileMenu.add(openFile);
-        saveImage = new JMenuItem("Save image");
+        saveImage = new JMenuItem("Save screenshot");
         saveImage.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
         saveImage.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e){
-                // Save image
+                int returnValue = saveFileChooser.showSaveDialog(Viewer.this);
+                if(returnValue == JFileChooser.APPROVE_OPTION){
+                    File selectedFile = saveFileChooser.getSelectedFile();
+                    saveImage(selectedFile);
+                }
             }
         });
         fileMenu.add(saveImage);
@@ -102,10 +127,8 @@ public class Viewer extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
-                if(cubemapRenderer != null){
-                    boolean showReference = cubemapRenderer.isShowReference();
-                    cubemapRenderer.showReference(!showReference);
-                }
+                boolean showReference = cubemapRenderer.isShowReference();
+                cubemapRenderer.showReference(!showReference);
             }
         });
 
@@ -118,7 +141,6 @@ public class Viewer extends JFrame {
                 boolean showInfo = cubemapPanel.isShowInfo();
                 cubemapPanel.setShowInfo(!showInfo);
             }
-            
         });
         optionsMenu.add(showInfo);
         optionsMenu.addSeparator();
@@ -128,9 +150,7 @@ public class Viewer extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
-                if(cubemapRenderer != null){
-                    cubemapRenderer.setLerp(false);
-                }
+                cubemapRenderer.setLerp(false);
             }
         });
         optionsMenu.add(nearest);
@@ -140,9 +160,7 @@ public class Viewer extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
-                if(cubemapRenderer != null){
-                    cubemapRenderer.setLerp(true);
-                }
+                cubemapRenderer.setLerp(true);
             }
             
         });
@@ -176,7 +194,110 @@ public class Viewer extends JFrame {
         cubemapPanel = new CubemapPanel();
         cubemapPanel.init();
         add(cubemapPanel);
+        saveImage.setEnabled(false);
+        showReference.setEnabled(false);
+        showInfo.setEnabled(false);
+        nearest.setEnabled(false);
+        bilinear.setEnabled(false);
+        resetOrientation.setEnabled(false);
         pack();
+    }
+    
+    private void saveImage(File file) {
+        CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
+        Cubemap cubemap = cubemapRenderer.getCubemap();
+        int width = cubemapRenderer.getWidth();
+        int height = cubemapRenderer.getHeight();
+        boolean reference = cubemapRenderer.isShowReference();
+        boolean lerp = cubemapRenderer.isLerp();
+        Matrix33 orientation = cubemapRenderer.getOrientation();
+        float fov = cubemapRenderer.getFov();
+        SaveDialog saveDialog = new SaveDialog(Viewer.this, true, width, height, fov, reference, lerp);
+        saveDialog.setVisible(true);
+        if (saveDialog.getReturnStatus() == SaveDialog.RET_CANCEL) {
+            return;
+        }
+        width = saveDialog.getOutputWidth();
+        height = saveDialog.getOutputHeight();
+        reference = saveDialog.isShowReference();
+        lerp = saveDialog.isLerp();
+        BufferedImage outputImage = CubemapRenderer.render(cubemap, orientation, fov, reference, lerp, width, height);
+        String format = "jpg";
+        String fileName = file.getName().toLowerCase();
+        if(fileName.endsWith(".jpg")){
+            format = "jpg";
+        }else if(fileName.endsWith(".jpeg")){
+            format = "jpeg";
+        }else if(fileName.endsWith(".png")){
+            format = "png";
+        }else if(fileName.endsWith(".bmp")){
+            format = "bmp";
+        }
+        try {
+            ImageIO.write(outputImage, format, file);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Couldn't save image", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    class SaveImageFileChooser extends JFileChooser {
+
+        public SaveImageFileChooser(String currentDirectoryPath) {
+            super(currentDirectoryPath);
+            setFileSelectionMode(JFileChooser.FILES_ONLY);
+            FileFilter filters[] = getChoosableFileFilters();
+            for (FileFilter filter : filters) {
+                removeChoosableFileFilter(filter);
+            }
+            FileNameExtensionFilter jpgFilter = new FileNameExtensionFilter("JPG Image", "jpg");
+            addChoosableFileFilter(jpgFilter);
+            FileNameExtensionFilter pngFilter = new FileNameExtensionFilter("PNG Image", "png");
+            addChoosableFileFilter(pngFilter);
+            FileNameExtensionFilter bmpFilter = new FileNameExtensionFilter("BMP Image", "bmp");
+            addChoosableFileFilter(bmpFilter);
+            setFileFilter(jpgFilter);
+            addPropertyChangeListener(JFileChooser.FILE_FILTER_CHANGED_PROPERTY, new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    FileNameExtensionFilter filter = (FileNameExtensionFilter) evt.getNewValue();
+                    String extensions[] = filter.getExtensions();
+                    String currentName = ((BasicFileChooserUI) getUI()).getFileName();
+                    int index = currentName.indexOf(".");
+                    if (index != -1) {
+                        currentName = currentName.substring(0, index);
+                    }
+                    currentName += "." + extensions[0];
+                    setSelectedFile(new File(currentName));
+                }
+            });
+        }
+
+        @Override
+        public void approveSelection() {
+            File file = getSelectedFile();
+            String path = file.getAbsolutePath().toLowerCase();
+            FileNameExtensionFilter filter = (FileNameExtensionFilter) getFileFilter();
+            String extensions[] = filter.getExtensions();
+            if(!path.endsWith(".png") && !path.endsWith(".jpg") && !path.endsWith(".jpeg") && !path.endsWith(".bmp")){
+                path += "." + extensions[0];
+                file = new File(path);
+                setSelectedFile(file);
+            }
+            if (file.exists()) {
+                int optionSelected = JOptionPane.showConfirmDialog(this, "Do you want to overwrite the existing file?", file.getName() + " already exists", JOptionPane.YES_NO_OPTION);
+                switch (optionSelected) {
+                    case JOptionPane.YES_OPTION:
+                        super.approveSelection();
+                        return;
+                    case JOptionPane.NO_OPTION:
+                        return;
+                    case JOptionPane.CLOSED_OPTION:
+                        cancelSelection();
+                        return;
+                }
+            }
+            super.approveSelection();
+        }
     }
     
     public static void main(String args[]) {
