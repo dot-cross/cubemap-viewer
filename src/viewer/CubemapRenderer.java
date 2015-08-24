@@ -260,7 +260,7 @@ public class CubemapRenderer extends Thread {
                 if(cubemap == null || frontBuffer == null || backBuffer == null){
                     continue;
                 }
-                // Render
+                // Start render
                 for (int i = 0; i < threadNumber; i++) {
                     processors[i].render = true;
                 }

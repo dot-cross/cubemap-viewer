@@ -2,6 +2,7 @@ package viewer;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
@@ -270,10 +271,12 @@ public class Cubemap {
     }
     
     public static Cubemap createReferenceCubemap(){
-        int size = 512, tx = size/2, ty = size/2, border = 3;
+        int size = 512, border = 3;
         Font f = new Font("Arial", Font.BOLD, 100);
         Color bgColor = new Color(255, 255, 255, 0);
+        int tx, ty, txtWidth, txtHeight, txtAscent;
         Graphics g;
+        FontMetrics m;
         // Positive X
         BufferedImage posXImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         g = posXImage.createGraphics();
@@ -285,6 +288,12 @@ public class Cubemap {
         g.fillRect(0, 0, size, border);
         g.fillRect(0, size - border, size, border);
         g.setFont(f);
+        m = g.getFontMetrics();
+        txtWidth = m.stringWidth("+X");
+        txtHeight = m.getHeight();
+        txtAscent = m.getAscent();
+        tx = size / 2 - txtWidth / 2;
+        ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("+X", tx, ty);
         // Negative X
         BufferedImage negXImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
@@ -297,6 +306,12 @@ public class Cubemap {
         g.fillRect(0, 0, size, border);
         g.fillRect(0, size - border, size, border);
         g.setFont(f);
+        m = g.getFontMetrics();
+        txtWidth = m.stringWidth("-X");
+        txtHeight = m.getHeight();
+        txtAscent = m.getAscent();
+        tx = size / 2 - txtWidth / 2;
+        ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("-X", tx, ty);
         // Positive Y
         BufferedImage posYImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
@@ -309,8 +324,14 @@ public class Cubemap {
         g.fillRect(0, 0, size, border);
         g.fillRect(0, size - border, size, border);
         g.setFont(f);
+        m = g.getFontMetrics();
+        txtWidth = m.stringWidth("+Y");
+        txtHeight = m.getHeight();
+        txtAscent = m.getAscent();
+        tx = size / 2 - txtWidth / 2;
+        ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("+Y", tx, ty);
-        // Negative X
+        // Negative Y
         BufferedImage negYImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         g = negYImage.createGraphics();
         g.setColor(bgColor);
@@ -321,8 +342,14 @@ public class Cubemap {
         g.fillRect(0, 0, size, border);
         g.fillRect(0, size - border, size, border);
         g.setFont(f);
+        m = g.getFontMetrics();
+        txtWidth = m.stringWidth("-Y");
+        txtHeight = m.getHeight();
+        txtAscent = m.getAscent();
+        tx = size / 2 - txtWidth / 2;
+        ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("-Y", tx, ty);
-        // Positive Y
+        // Positive Z
         BufferedImage posZImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         g = posZImage.createGraphics();
         g.setColor(bgColor);
@@ -333,8 +360,14 @@ public class Cubemap {
         g.fillRect(0, 0, size, border);
         g.fillRect(0, size - border, size, border);
         g.setFont(f);
+        m = g.getFontMetrics();
+        txtWidth = m.stringWidth("+Z");
+        txtHeight = m.getHeight();
+        txtAscent = m.getAscent();
+        tx = size / 2 - txtWidth / 2;
+        ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("+Z", tx, ty);
-        // Negative X
+        // Negative Z
         BufferedImage negZImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         g = negZImage.createGraphics();
         g.setColor(bgColor);
@@ -345,6 +378,12 @@ public class Cubemap {
         g.fillRect(0, 0, size, border);
         g.fillRect(0, size - border, size, border);
         g.setFont(f);
+        m = g.getFontMetrics();
+        txtWidth = m.stringWidth("-Z");
+        txtHeight = m.getHeight();
+        txtAscent = m.getAscent();
+        tx = size / 2 - txtWidth / 2;
+        ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("-Z", tx, ty);
         return new Cubemap(posXImage, negXImage, posYImage, negYImage, posZImage, negZImage);
     }

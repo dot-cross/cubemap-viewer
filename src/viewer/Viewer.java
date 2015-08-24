@@ -7,8 +7,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import javax.swing.JFrame;
 import java.io.File;
 import java.io.IOException;
@@ -25,9 +23,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.plaf.basic.BasicFileChooserUI;
 import math.Matrix33;
 
 /**
@@ -47,6 +42,7 @@ public class Viewer extends JFrame {
     private JMenu optionsMenu;
     private JMenuItem showReference;
     private JMenuItem showInfo;
+    private JMenuItem showUnwrapped;
     private JMenuItem nearest;
     private JMenuItem bilinear;
     private JMenuItem resetOrientation;
@@ -82,6 +78,7 @@ public class Viewer extends JFrame {
                             saveImage.setEnabled(true);
                             showReference.setEnabled(true);
                             showInfo.setEnabled(true);
+                            showUnwrapped.setEnabled(true);
                             nearest.setEnabled(true);
                             bilinear.setEnabled(true);
                             resetOrientation.setEnabled(true);
@@ -143,6 +140,15 @@ public class Viewer extends JFrame {
             }
         });
         optionsMenu.add(showInfo);
+        showUnwrapped = new JMenuItem("Show unwrapped image");
+        showUnwrapped.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                UnwrappedDialog dialog = new UnwrappedDialog(Viewer.this, true, cubemapPanel.getCubemap());
+                dialog.setVisible(true);
+            }
+        });
+        optionsMenu.add(showUnwrapped);
         optionsMenu.addSeparator();
         nearest = new JMenuItem("Nearest");
         nearest.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, 0));
@@ -197,6 +203,7 @@ public class Viewer extends JFrame {
         saveImage.setEnabled(false);
         showReference.setEnabled(false);
         showInfo.setEnabled(false);
+        showUnwrapped.setEnabled(false);
         nearest.setEnabled(false);
         bilinear.setEnabled(false);
         resetOrientation.setEnabled(false);
@@ -237,66 +244,6 @@ public class Viewer extends JFrame {
             ImageIO.write(outputImage, format, file);
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Couldn't save image", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    class SaveImageFileChooser extends JFileChooser {
-
-        public SaveImageFileChooser(String currentDirectoryPath) {
-            super(currentDirectoryPath);
-            setFileSelectionMode(JFileChooser.FILES_ONLY);
-            FileFilter filters[] = getChoosableFileFilters();
-            for (FileFilter filter : filters) {
-                removeChoosableFileFilter(filter);
-            }
-            FileNameExtensionFilter jpgFilter = new FileNameExtensionFilter("JPG Image", "jpg");
-            addChoosableFileFilter(jpgFilter);
-            FileNameExtensionFilter pngFilter = new FileNameExtensionFilter("PNG Image", "png");
-            addChoosableFileFilter(pngFilter);
-            FileNameExtensionFilter bmpFilter = new FileNameExtensionFilter("BMP Image", "bmp");
-            addChoosableFileFilter(bmpFilter);
-            setFileFilter(jpgFilter);
-            addPropertyChangeListener(JFileChooser.FILE_FILTER_CHANGED_PROPERTY, new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    FileNameExtensionFilter filter = (FileNameExtensionFilter) evt.getNewValue();
-                    String extensions[] = filter.getExtensions();
-                    String currentName = ((BasicFileChooserUI) getUI()).getFileName();
-                    int index = currentName.indexOf(".");
-                    if (index != -1) {
-                        currentName = currentName.substring(0, index);
-                    }
-                    currentName += "." + extensions[0];
-                    setSelectedFile(new File(currentName));
-                }
-            });
-        }
-
-        @Override
-        public void approveSelection() {
-            File file = getSelectedFile();
-            String path = file.getAbsolutePath().toLowerCase();
-            FileNameExtensionFilter filter = (FileNameExtensionFilter) getFileFilter();
-            String extensions[] = filter.getExtensions();
-            if(!path.endsWith(".png") && !path.endsWith(".jpg") && !path.endsWith(".jpeg") && !path.endsWith(".bmp")){
-                path += "." + extensions[0];
-                file = new File(path);
-                setSelectedFile(file);
-            }
-            if (file.exists()) {
-                int optionSelected = JOptionPane.showConfirmDialog(this, "Do you want to overwrite the existing file?", file.getName() + " already exists", JOptionPane.YES_NO_OPTION);
-                switch (optionSelected) {
-                    case JOptionPane.YES_OPTION:
-                        super.approveSelection();
-                        return;
-                    case JOptionPane.NO_OPTION:
-                        return;
-                    case JOptionPane.CLOSED_OPTION:
-                        cancelSelection();
-                        return;
-                }
-            }
-            super.approveSelection();
         }
     }
     
