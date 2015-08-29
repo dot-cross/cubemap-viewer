@@ -28,6 +28,8 @@ public class CubemapPanel extends JPanel {
     private final Color fontBgColor = new Color(0, 0, 0, 80);
     private final DecimalFormat df = new DecimalFormat("###.##");
     private boolean showInfo = true;
+    private CameraAdapter cameraAdapter;
+    private boolean invertMouse;
 
     public CubemapPanel(){
         frames = 0;
@@ -43,7 +45,7 @@ public class CubemapPanel extends JPanel {
                 }
             }
         });
-        CameraAdapter cameraAdapter = new CameraAdapter();
+        cameraAdapter = new CameraAdapter();
         addMouseListener(cameraAdapter);
         addMouseMotionListener(cameraAdapter);
         addMouseWheelListener(cameraAdapter);
@@ -74,6 +76,19 @@ public class CubemapPanel extends JPanel {
     public void setShowInfo(boolean showInfo){
         this.showInfo = showInfo;
         repaint();
+    }
+    
+    public boolean isInvertMouse(){
+        return invertMouse;
+    }
+    
+    public void setInvertMouse(boolean invert){
+        this.invertMouse = invert;
+        if(invert){
+            cameraAdapter.invert = -1.0f;
+        }else{
+            cameraAdapter.invert = 1.0f;
+        }
     }
     
     public void resetOrientation(){
@@ -137,6 +152,7 @@ public class CubemapPanel extends JPanel {
     class CameraAdapter extends MouseAdapter {
 
         private int startX, startY;
+        public float invert = 1.0f;
         
         @Override
         public void mousePressed(MouseEvent e) {
@@ -157,6 +173,7 @@ public class CubemapPanel extends JPanel {
             float aspectRatio = (float)windowWidth / (float)windowHeight;
             float fov = cubemapRenderer.getFov();
             float diffX = endX - startX, diffY = endY - startY;
+            diffX *= invert; diffY *= invert;
             startX = endX; startY = endY;
             angleY += fov * (float) diffX / (float) windowWidth;
             angleX += (fov / aspectRatio) * (float) diffY / (float) windowHeight;

@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -40,12 +41,13 @@ public class Viewer extends JFrame {
     private JMenuItem saveImage;
     private JMenuItem exit;
     private JMenu optionsMenu;
-    private JMenuItem showReference;
-    private JMenuItem showInfo;
+    private JCheckBoxMenuItem showReference;
+    private JCheckBoxMenuItem showInfo;
     private JMenuItem showUnwrapped;
-    private JMenuItem nearest;
-    private JMenuItem bilinear;
+    private JCheckBoxMenuItem nearest;
+    private JCheckBoxMenuItem bilinear;
     private JMenuItem resetOrientation;
+    private JCheckBoxMenuItem invertMouse;
     private JMenu helpMenu;
     private JMenuItem about;
     
@@ -72,22 +74,36 @@ public class Viewer extends JFrame {
                 int returnValue = openFileChooser.showOpenDialog(Viewer.this);
                 if(returnValue == JFileChooser.APPROVE_OPTION){
                     File selectedDir = openFileChooser.getSelectedFile();
+                    Cubemap cubemap = null;
                     try {
-                        Cubemap previousCubemap = cubemapPanel.getCubemap();
-                        if(previousCubemap == null){
-                            saveImage.setEnabled(true);
-                            showReference.setEnabled(true);
-                            showInfo.setEnabled(true);
-                            showUnwrapped.setEnabled(true);
-                            nearest.setEnabled(true);
-                            bilinear.setEnabled(true);
-                            resetOrientation.setEnabled(true);
-                        }
-                        Cubemap cubemap = Cubemap.loadCubemap(selectedDir.getAbsolutePath());
-                        cubemapPanel.setCubemap(cubemap);
-                    } catch (Exception ex) {
+                        cubemap = Cubemap.loadCubemap(selectedDir.getAbsolutePath());
+                    } catch (IOException ex) {
                         JOptionPane.showMessageDialog(Viewer.this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
                     }
+                    if (cubemap == null) {
+                        JOptionPane.showMessageDialog(Viewer.this, "Couldn't load cubemap", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    Cubemap previousCubemap = cubemapPanel.getCubemap();
+                    if (previousCubemap == null) {
+                        CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
+                        saveImage.setEnabled(true);
+                        showReference.setEnabled(true);
+                        showInfo.setEnabled(true);
+                        showUnwrapped.setEnabled(true);
+                        nearest.setEnabled(true);
+                        bilinear.setEnabled(true);
+                        invertMouse.setEnabled(true);
+                        resetOrientation.setEnabled(true);
+                        showReference.setSelected(cubemapRenderer.isShowReference());
+                        showInfo.setSelected(cubemapPanel.isShowInfo());
+                        boolean lerp = cubemapRenderer.isLerp();
+                        nearest.setSelected(!lerp);
+                        bilinear.setSelected(lerp);
+                        invertMouse.setSelected(cubemapPanel.isInvertMouse());
+                    }
+                    cubemapPanel.setCubemap(cubemap);
                 }
             }
         });
@@ -118,7 +134,7 @@ public class Viewer extends JFrame {
         menuBar.add(fileMenu);
         
         optionsMenu = new JMenu("Options");
-        showReference = new JMenuItem("Show reference");
+        showReference = new JCheckBoxMenuItem("Show reference");
         showReference.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0));
         showReference.addActionListener(new ActionListener(){
             @Override
@@ -130,7 +146,7 @@ public class Viewer extends JFrame {
         });
 
         optionsMenu.add(showReference);
-        showInfo = new JMenuItem("Show Info");
+        showInfo = new JCheckBoxMenuItem("Show Info");
         showInfo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, 0));
         showInfo.addActionListener(new ActionListener(){
             @Override
@@ -150,7 +166,7 @@ public class Viewer extends JFrame {
         });
         optionsMenu.add(showUnwrapped);
         optionsMenu.addSeparator();
-        nearest = new JMenuItem("Nearest");
+        nearest = new JCheckBoxMenuItem("Nearest");
         nearest.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, 0));
         nearest.addActionListener(new ActionListener(){
             @Override
@@ -160,7 +176,7 @@ public class Viewer extends JFrame {
             }
         });
         optionsMenu.add(nearest);
-        bilinear = new JMenuItem("Bilinear");
+        bilinear = new JCheckBoxMenuItem("Bilinear");
         bilinear.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, 0));
         bilinear.addActionListener(new ActionListener(){
             @Override
@@ -174,6 +190,16 @@ public class Viewer extends JFrame {
         ButtonGroup bg = new ButtonGroup();
         bg.add(nearest);
         bg.add(bilinear);
+        optionsMenu.addSeparator();
+        invertMouse = new JCheckBoxMenuItem("Invert mouse");
+        invertMouse.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                boolean invertMouse = cubemapPanel.isInvertMouse();
+                cubemapPanel.setInvertMouse(!invertMouse);
+            }
+        });
+        optionsMenu.add(invertMouse);
         resetOrientation = new JMenuItem("Reset orientation");
         resetOrientation.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0));
         resetOrientation.addActionListener(new ActionListener(){
@@ -182,7 +208,6 @@ public class Viewer extends JFrame {
                 cubemapPanel.resetOrientation();
             }
         });
-        optionsMenu.addSeparator();
         optionsMenu.add(resetOrientation);
         menuBar.add(optionsMenu);
 
@@ -207,6 +232,7 @@ public class Viewer extends JFrame {
         nearest.setEnabled(false);
         bilinear.setEnabled(false);
         resetOrientation.setEnabled(false);
+        invertMouse.setEnabled(false);
         pack();
     }
     

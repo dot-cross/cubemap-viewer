@@ -179,8 +179,7 @@ public class Cubemap {
         }
     }
 
-    public static Cubemap loadCubemap(String path) throws IOException, Exception {
-        BufferedImage imageTmp;
+    public static Cubemap loadCubemap(String path) throws IOException {
         File posXFile = null, negXFile = null, posYFile = null, negYFile = null, posZFile = null, negZFile = null;
         File cubemapDir = new File(path);
         File files[] = cubemapDir.listFiles();
@@ -203,69 +202,95 @@ public class Cubemap {
             }
         }
         if(posXFile == null){
-            throw new Exception("Cannot find posx");
+            throw new IOException("Couldn't find neither posx nor right");
         }
         if(negXFile == null){
-            throw new Exception("Cannot find negx");
+            throw new IOException("Couldn't find neither negx nor left");
         }
         if(posYFile == null){
-            throw new Exception("Cannot find posy");
+            throw new IOException("Couldn't find neither posy nor top");
         }
         if(negYFile == null){
-            throw new Exception("Cannot find negy");
+            throw new IOException("Couldn't find neither negy nor bottom");
         }
         if(posZFile == null){
-            throw new Exception("Cannot find posz");
+            throw new IOException("Couldn't find neither posz nor front");
         }
         if(negZFile == null){
-            throw new Exception("Cannot find negz");
+            throw new IOException("Couldn't find neither negz nor back");
         }
+        BufferedImage imageTmp;
+        String fileName;
         // Load Positive X
+        fileName = posXFile.getName();
         imageTmp = ImageIO.read(posXFile);
+        if(imageTmp == null){
+            throw new IOException("Couldn't open file: "+ fileName);
+        }
         if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new Exception("posx is not a square image");
+            throw new IOException(fileName + " is not a square image");
         }
         BufferedImage posXImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
         posXImage.getGraphics().drawImage(imageTmp, 0, 0, null);
         // Load Negative X
+        fileName = negXFile.getName();
         imageTmp = ImageIO.read(negXFile);
+        if(imageTmp == null){
+            throw new IOException("Couldn't open file: "+ fileName);
+        }
         if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new Exception("negx is not a square image");
+            throw new IOException(fileName + " is not a square image");
         }
         BufferedImage negXImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
         negXImage.getGraphics().drawImage(imageTmp, 0, 0, null);
         // Positive Y
+        fileName = posYFile.getName();
         imageTmp = ImageIO.read(posYFile);
+        if(imageTmp == null){
+            throw new IOException("Couldn't open file: "+ fileName);
+        }
         if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new Exception("posy is not a square image");
+            throw new IOException(fileName + " is not a square image");
         }
         BufferedImage posYImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
         posYImage.getGraphics().drawImage(imageTmp, 0, 0, null);
         // Negative Y
+        fileName = negYFile.getName();
         imageTmp = ImageIO.read(negYFile);
+        if(imageTmp == null){
+            throw new IOException("Couldn't open file: "+ fileName);
+        }
         if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new Exception("negy is not a square image");
+            throw new IOException(fileName + " is not a square image");
         }
         BufferedImage negYImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
         negYImage.getGraphics().drawImage(imageTmp, 0, 0, null);
         // Positive Z
+        fileName = posZFile.getName();
         imageTmp = ImageIO.read(posZFile);
+        if(imageTmp == null){
+            throw new IOException("Couldn't open file: "+ fileName);
+        }
         if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new Exception("posz is not a square image");
+            throw new IOException(fileName + " is not a square image");
         }
         BufferedImage posZImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
         posZImage.getGraphics().drawImage(imageTmp, 0, 0, null);
         // Negative Z
+        fileName = negZFile.getName();
         imageTmp = ImageIO.read(negZFile);
+        if(imageTmp == null){
+            throw new IOException("Couldn't open file: "+ fileName);
+        }
         if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new Exception("negz is not a square image");
+            throw new IOException(fileName + " is not a square image");
         }
         BufferedImage negZImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
         negZImage.getGraphics().drawImage(imageTmp, 0, 0, null);
         if(posXImage.getWidth() != negXImage.getWidth() || negXImage.getWidth() != posYImage.getWidth() ||
                 posYImage.getWidth() != negYImage.getWidth() || negYImage.getWidth() != posZImage.getWidth() ||
                 posZImage.getWidth() != negZImage.getWidth()){
-            throw new Exception("The 6 images have not the same size");
+            throw new IOException("The 6 images have not the same size");
         }
         return new Cubemap(posXImage, negXImage, posYImage, negYImage, posZImage, negZImage);
     }
