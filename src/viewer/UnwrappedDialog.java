@@ -34,9 +34,9 @@ public class UnwrappedDialog extends JDialog {
 
         @Override
         protected void paintComponent(Graphics g) {
-            g.setColor(Color.WHITE);
-            g.fillRect(0, 0, getWidth(), getHeight());
             int panelWidth = getWidth(), panelHeight = getHeight();
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, panelWidth, panelHeight);
             int imageWidth = panelWidth / 4;
             int imageHeight = panelHeight / 3;
             g.setFont(f);

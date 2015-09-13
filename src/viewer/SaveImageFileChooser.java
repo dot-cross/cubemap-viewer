@@ -35,12 +35,14 @@ public class SaveImageFileChooser extends JFileChooser {
                 FileNameExtensionFilter filter = (FileNameExtensionFilter) evt.getNewValue();
                 String extensions[] = filter.getExtensions();
                 String currentName = ((BasicFileChooserUI) getUI()).getFileName();
-                int index = currentName.indexOf(".");
-                if (index != -1) {
-                    currentName = currentName.substring(0, index);
+                if (!currentName.isEmpty()) {
+                    int index = currentName.indexOf(".");
+                    if (index != -1) {
+                        currentName = currentName.substring(0, index);
+                    }
+                    currentName += "." + extensions[0];
+                    setSelectedFile(new File(currentName));
                 }
-                currentName += "." + extensions[0];
-                setSelectedFile(new File(currentName));
             }
         });
     }

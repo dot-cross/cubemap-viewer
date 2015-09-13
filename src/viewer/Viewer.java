@@ -74,36 +74,7 @@ public class Viewer extends JFrame {
                 int returnValue = openFileChooser.showOpenDialog(Viewer.this);
                 if(returnValue == JFileChooser.APPROVE_OPTION){
                     File selectedDir = openFileChooser.getSelectedFile();
-                    Cubemap cubemap = null;
-                    try {
-                        cubemap = Cubemap.loadCubemap(selectedDir.getAbsolutePath());
-                    } catch (IOException ex) {
-                        JOptionPane.showMessageDialog(Viewer.this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    if (cubemap == null) {
-                        JOptionPane.showMessageDialog(Viewer.this, "Couldn't load cubemap", "Error", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    Cubemap previousCubemap = cubemapPanel.getCubemap();
-                    if (previousCubemap == null) {
-                        CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
-                        saveImage.setEnabled(true);
-                        showReference.setEnabled(true);
-                        showInfo.setEnabled(true);
-                        showUnwrapped.setEnabled(true);
-                        nearest.setEnabled(true);
-                        bilinear.setEnabled(true);
-                        invertMouse.setEnabled(true);
-                        resetOrientation.setEnabled(true);
-                        showReference.setSelected(cubemapRenderer.isShowReference());
-                        showInfo.setSelected(cubemapPanel.isShowInfo());
-                        boolean lerp = cubemapRenderer.isLerp();
-                        nearest.setSelected(!lerp);
-                        bilinear.setSelected(lerp);
-                        invertMouse.setSelected(cubemapPanel.isInvertMouse());
-                    }
-                    cubemapPanel.setCubemap(cubemap);
+                    loadCubemap(selectedDir);
                 }
             }
         });
@@ -235,7 +206,40 @@ public class Viewer extends JFrame {
         invertMouse.setEnabled(false);
         pack();
     }
-    
+
+    private void loadCubemap(File cubemapDir){
+        Cubemap cubemap = null;
+        try {
+            cubemap = Cubemap.loadCubemap(cubemapDir.getAbsolutePath());
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (cubemap == null) {
+            JOptionPane.showMessageDialog(this, "Couldn't load cubemap", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        Cubemap previousCubemap = cubemapPanel.getCubemap();
+        if (previousCubemap == null) {
+            CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
+            saveImage.setEnabled(true);
+            showReference.setEnabled(true);
+            showInfo.setEnabled(true);
+            showUnwrapped.setEnabled(true);
+            nearest.setEnabled(true);
+            bilinear.setEnabled(true);
+            invertMouse.setEnabled(true);
+            resetOrientation.setEnabled(true);
+            showReference.setSelected(cubemapRenderer.isShowReference());
+            showInfo.setSelected(cubemapPanel.isShowInfo());
+            boolean lerp = cubemapRenderer.isLerp();
+            nearest.setSelected(!lerp);
+            bilinear.setSelected(lerp);
+            invertMouse.setSelected(cubemapPanel.isInvertMouse());
+        }
+        cubemapPanel.setCubemap(cubemap);
+    }
+
     private void saveImage(File file) {
         CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
         Cubemap cubemap = cubemapRenderer.getCubemap();

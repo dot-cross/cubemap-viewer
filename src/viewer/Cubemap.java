@@ -182,6 +182,9 @@ public class Cubemap {
     public static Cubemap loadCubemap(String path) throws IOException {
         File posXFile = null, negXFile = null, posYFile = null, negYFile = null, posZFile = null, negZFile = null;
         File cubemapDir = new File(path);
+        if(!cubemapDir.exists()){
+            throw new IOException("Directory " + cubemapDir.getName() + " not found");
+        }
         File files[] = cubemapDir.listFiles();
         for(File f: files){
             if(f.isFile()){
