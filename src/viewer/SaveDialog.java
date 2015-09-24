@@ -108,6 +108,7 @@ public class SaveDialog extends JDialog {
         });
         panel.add(cancelButton);
         add(panel);
+        getRootPane().setDefaultButton(saveButton);
         pack();
         setLocation(parent.getLocation().x + parent.getWidth() / 2 - getWidth() / 2, parent.getLocation().y + parent.getHeight() / 2 - getHeight() / 2);
     }

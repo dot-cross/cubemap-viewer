@@ -1,6 +1,5 @@
 package viewer;
 
-import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -282,8 +281,9 @@ public class Viewer extends JFrame {
             @Override
             public void run() {
                 try {
-                    UIManager.setLookAndFeel(new WindowsLookAndFeel());
-                } catch (UnsupportedLookAndFeelException ex) {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                } catch (UnsupportedLookAndFeelException | ClassNotFoundException |
+                        InstantiationException | IllegalAccessException ex) {
                     Logger.getLogger(Viewer.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 Viewer viewer = new Viewer();
