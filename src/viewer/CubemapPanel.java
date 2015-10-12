@@ -35,7 +35,6 @@ public class CubemapPanel extends JPanel {
         frames = 0;
         lastTime = 0;
         fps = 0.0f;
-        setPreferredSize(new Dimension(800, 600));
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {

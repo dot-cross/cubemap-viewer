@@ -1,5 +1,6 @@
 package viewer;
 
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -193,6 +194,7 @@ public class Viewer extends JFrame {
         menuBar.add(helpMenu);
         setJMenuBar(menuBar);
         cubemapPanel = new CubemapPanel();
+        cubemapPanel.setPreferredSize(new Dimension(800, 600));
         cubemapPanel.init();
         add(cubemapPanel);
         saveImage.setEnabled(false);
@@ -204,6 +206,7 @@ public class Viewer extends JFrame {
         resetOrientation.setEnabled(false);
         invertMouse.setEnabled(false);
         pack();
+        setLocationRelativeTo(null);
     }
 
     private void loadCubemap(File cubemapDir){
