@@ -154,5 +154,29 @@ public final class Matrix22 {
         mat.m10 = s;  mat.m11 = c;
         return mat;
     }
+    
+    public static Matrix22 rotateAlign(Vector2D fromDir, Vector2D toDir){
+        Matrix22 mat = new Matrix22();
+        float c = fromDir.dot(toDir);
+        float s = fromDir.x*toDir.y-toDir.x*fromDir.y;
+        mat.m00 = c;  mat.m01 = -s;
+        mat.m10 = s;  mat.m11 = c;
+        return mat;
+    }
+
+    public static Matrix22 scale(float sx, float sy){
+        Matrix22 mat = new Matrix22();
+        mat.m00 = sx;    mat.m01 = 0.0f;
+        mat.m10 = 0.0f;  mat.m11 = sy;
+        return mat;
+    }
+
+    public static Matrix22 scaleDir(float k, float x, float y){
+        Matrix22 mat = new Matrix22();
+        float k_minus_1 = k - 1.0f;
+        mat.m00 = k_minus_1 * x * x + 1.0f;  mat.m01 = k_minus_1 * x * y;
+        mat.m10 = k_minus_1 * x * y;         mat.m11 = k_minus_1 * y * y + 1.0f;
+        return mat;
+    }
 
 }

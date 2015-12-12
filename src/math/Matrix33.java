@@ -259,5 +259,22 @@ public final class Matrix33 {
         mat.m20 = 0.0f;  mat.m21 = 0.0f;  mat.m22 = 1.0f;
         return mat;
     }
+    
+    public static Matrix33 scale(float sx, float sy, float sz){
+        Matrix33 mat = new Matrix33();
+        mat.m00 = sx;    mat.m01 = 0.0f;  mat.m02 = 0.0f;
+        mat.m10 = 0.0f;  mat.m11 = sy;    mat.m12 = 0.0f;
+        mat.m20 = 0.0f;  mat.m21 = 0.0f;  mat.m22 = sz;
+        return mat;
+    }
+
+    public static Matrix33 scaleDir(float k, float x, float y, float z){
+        Matrix33 mat = new Matrix33();
+        float k_minus_1 = k - 1.0f;
+        mat.m00 = k_minus_1 * x * x + 1.0f;  mat.m01 = k_minus_1 * x * y;         mat.m02 = k_minus_1 * x * z;
+        mat.m10 = k_minus_1 * x * y;         mat.m11 = k_minus_1 * y * y + 1.0f;  mat.m12 = k_minus_1 * y * z;
+        mat.m20 = k_minus_1 * x * z;         mat.m21 = k_minus_1 * y * z;         mat.m22 = k_minus_1 * z *z + 1.0f;
+        return mat;
+    }
 
 }
