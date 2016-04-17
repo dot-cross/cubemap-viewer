@@ -43,8 +43,12 @@ public final class Matrix22 {
     }
 
     public void assignTranspose(Matrix22 mat){
-        m00 = mat.m00;  m01 = mat.m10;
-        m10 = mat.m01;  m11 = mat.m11;
+        float t00 = mat.m00;
+        float t01 = mat.m01;
+        float t10 = mat.m10;
+        float t11 = mat.m11;
+        m00 = t00;  m01 = t10;
+        m10 = t01;  m11 = t11;
     }
     
     public void assignRow(Vector2D row1, Vector2D row2){
@@ -97,37 +101,81 @@ public final class Matrix22 {
         return new Matrix22(this, true);
     }
     
-    public Vector2D mult(Vector2D in){
-        Vector2D out = new Vector2D();
-        out.x = m00 * in.x + m01 * in.y;
-        out.y = m10 * in.x + m11 * in.y;
-        return out;
-    }
-
-    public void mult(Vector2D in, Vector2D out){
-        out.x = m00 * in.x + m01 * in.y;
-        out.y = m10 * in.x + m11 * in.y;
+    public Matrix22 add(Matrix22 mat){
+        Matrix22 out = new Matrix22();
+        return add(mat, out);
     }
     
-    public Matrix22 mult(Matrix22 in){
-        Matrix22 out = new Matrix22();
-        out.m00 = m00 * in.m00 + m01 * in.m10;
-        out.m01 = m00 * in.m01 + m01 * in.m11;
-        out.m10 = m10 * in.m00 + m11 * in.m10;
-        out.m11 = m10 * in.m01 + m11 * in.m11;
+    public Matrix22 add(Matrix22 mat, Matrix22 out){
+        out.m00 = m00 + mat.m00;
+        out.m01 = m01 + mat.m01;
+        out.m10 = m10 + mat.m10;
+        out.m11 = m11 + mat.m11;
         return out;
     }
 
-    public void mult(Matrix22 in, Matrix22 out){
-        out.m00 = m00 * in.m00 + m01 * in.m10;
-        out.m01 = m00 * in.m01 + m01 * in.m11;
-        out.m10 = m10 * in.m00 + m11 * in.m10;
-        out.m11 = m10 * in.m01 + m11 * in.m11;
+    public Matrix22 sub(Matrix22 mat){
+        Matrix22 out = new Matrix22();
+        return sub(mat, out);
+    }
+    
+    public Matrix22 sub(Matrix22 mat, Matrix22 out){
+        out.m00 = m00 - mat.m00;
+        out.m01 = m01 - mat.m01;
+        out.m10 = m10 - mat.m10;
+        out.m11 = m11 - mat.m11;
+        return out;
+    }
+    
+    public Matrix22 mult(float k){
+        Matrix22 out = new Matrix22();
+        return mult(k, out);
+    }
+    
+    public Matrix22 mult(float k, Matrix22 out){
+        out.m00 = k*m00;
+        out.m01 = k*m01;
+        out.m10 = k*m10;
+        out.m11 = k*m11;
+        return out;
+    }
+    
+    public Vector2D mult(Vector2D vec){
+        Vector2D out = new Vector2D();
+        out.x = m00 * vec.x + m01 * vec.y;
+        out.y = m10 * vec.x + m11 * vec.y;
+        return out;
+    }
+
+    public Vector2D mult(Vector2D vec, Vector2D out){
+        float x = m00 * vec.x + m01 * vec.y;
+        float y = m10 * vec.x + m11 * vec.y;
+        out.x = x;  out.y = y;
+        return out;
+    }
+    
+    public Matrix22 mult(Matrix22 mat){
+        Matrix22 out = new Matrix22();
+        out.m00 = m00 * mat.m00 + m01 * mat.m10;
+        out.m01 = m00 * mat.m01 + m01 * mat.m11;
+        out.m10 = m10 * mat.m00 + m11 * mat.m10;
+        out.m11 = m10 * mat.m01 + m11 * mat.m11;
+        return out;
+    }
+
+    public Matrix22 mult(Matrix22 mat, Matrix22 out){
+        float t00 = m00 * mat.m00 + m01 * mat.m10;
+        float t01 = m00 * mat.m01 + m01 * mat.m11;
+        float t10 = m10 * mat.m00 + m11 * mat.m10;
+        float t11 = m10 * mat.m01 + m11 * mat.m11;
+        out.m00 = t00;  out.m01 = t01;
+        out.m10 = t10;  out.m11 = t11;
+        return out;
     }
     
     public Matrix22 inverse(){
 	float det = determinant();
-        if(det == 0.0f){
+        if(Math.abs(det) <= 0.001f){
             return null;
         }
         Matrix22 inv = new Matrix22();

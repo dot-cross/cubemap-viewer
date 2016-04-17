@@ -62,9 +62,18 @@ public final class Matrix33 {
     }
     
     public void assignTranspose(Matrix33 mat){
-        m00 = mat.m00;  m01 = mat.m10;  m02 = mat.m20;
-        m10 = mat.m01;  m11 = mat.m11;  m12 = mat.m21;
-        m20 = mat.m02;  m21 = mat.m12;  m22 = mat.m22;
+        float t00 = mat.m00;
+        float t01 = mat.m01;
+        float t02 = mat.m02;
+        float t10 = mat.m10;
+        float t11 = mat.m11;
+        float t12 = mat.m12;
+        float t20 = mat.m20;
+        float t21 = mat.m21;
+        float t22 = mat.m22;
+        m00 = t00;  m01 = t10;  m02 = t20;
+        m10 = t01;  m11 = t11;  m12 = t21;
+        m20 = t02;  m21 = t12;  m22 = t22;
     }
     
     public void assignRow(Vector3D row1, Vector3D row2, Vector3D row3){
@@ -146,7 +155,7 @@ public final class Matrix33 {
     
     public Matrix33 inverse(){
         float det = determinant();
-        if(det == 0.0f){
+        if(Math.abs(det) <= 0.001f){
             return null;
         }
         Matrix33 inv = new Matrix33();
@@ -159,6 +168,60 @@ public final class Matrix33 {
     public Matrix33 transpose(){
         return new Matrix33(this, true);
     }
+
+    public Matrix33 add(Matrix33 mat){
+        Matrix33 out = new Matrix33();
+        return add(mat, out);
+    }
+    
+    public Matrix33 add(Matrix33 mat, Matrix33 out){
+        out.m00 = m00 + mat.m00;
+        out.m01 = m01 + mat.m01;
+        out.m02 = m02 + mat.m02;
+        out.m10 = m10 + mat.m10;
+        out.m11 = m11 + mat.m11;
+        out.m12 = m12 + mat.m12;
+        out.m20 = m20 + mat.m20;
+        out.m21 = m21 + mat.m21;
+        out.m22 = m22 + mat.m22;
+        return out;
+    }
+
+    public Matrix33 sub(Matrix33 mat){
+        Matrix33 out = new Matrix33();
+        return sub(mat, out);
+    }
+    
+    public Matrix33 sub(Matrix33 mat, Matrix33 out){
+        out.m00 = m00 - mat.m00;
+        out.m01 = m01 - mat.m01;
+        out.m02 = m02 - mat.m02;
+        out.m10 = m10 - mat.m10;
+        out.m11 = m11 - mat.m11;
+        out.m12 = m12 - mat.m12;
+        out.m20 = m20 - mat.m20;
+        out.m21 = m21 - mat.m21;
+        out.m22 = m22 - mat.m22;
+        return out;
+    }
+    
+    public Matrix33 mult(float k){
+        Matrix33 out = new Matrix33();
+        return mult(k, out);
+    }
+    
+    public Matrix33 mult(float k, Matrix33 out){
+        out.m00 = k*m00;
+        out.m01 = k*m01;
+        out.m02 = k*m02;
+        out.m10 = k*m10;
+        out.m11 = k*m11;
+        out.m12 = k*m12;
+        out.m20 = k*m20;
+        out.m21 = k*m21;
+        out.m22 = k*m22;
+        return out;
+    }
     
     public Vector3D mult(Vector3D vec){
         Vector3D output = new Vector3D();
@@ -168,36 +231,41 @@ public final class Matrix33 {
         return output;
     }
     
-    public void mult(Vector3D in, Vector3D out){
-        out.x = m00*in.x + m01*in.y + m02*in.z;
-        out.y = m10*in.x + m11*in.y + m12*in.z;
-        out.z = m20*in.x + m21*in.y + m22*in.z;
+    public Vector3D mult(Vector3D vec, Vector3D out){
+        float x = m00*vec.x + m01*vec.y + m02*vec.z;
+        float y = m10*vec.x + m11*vec.y + m12*vec.z;
+        float z = m20*vec.x + m21*vec.y + m22*vec.z;
+        out.x = x;  out.y = y;  out.z = z;
+        return out;
     }
     
-    public Matrix33 mult(Matrix33 in){
+    public Matrix33 mult(Matrix33 mat){
         Matrix33 out = new Matrix33();
-        out.m00 = m00 * in.m00 + m01 * in.m10 + m02 * in.m20;
-        out.m01 = m00 * in.m01 + m01 * in.m11 + m02 * in.m21;
-        out.m02 = m00 * in.m02 + m01 * in.m12 + m02 * in.m22;
-        out.m10 = m10 * in.m00 + m11 * in.m10 + m12 * in.m20;
-        out.m11 = m10 * in.m01 + m11 * in.m11 + m12 * in.m21;
-        out.m12 = m10 * in.m02 + m11 * in.m12 + m12 * in.m22;
-        out.m20 = m20 * in.m00 + m21 * in.m10 + m22 * in.m20;
-        out.m21 = m20 * in.m01 + m21 * in.m11 + m22 * in.m21;
-        out.m22 = m20 * in.m02 + m21 * in.m12 + m22 * in.m22;
+        out.m00 = m00 * mat.m00 + m01 * mat.m10 + m02 * mat.m20;
+        out.m01 = m00 * mat.m01 + m01 * mat.m11 + m02 * mat.m21;
+        out.m02 = m00 * mat.m02 + m01 * mat.m12 + m02 * mat.m22;
+        out.m10 = m10 * mat.m00 + m11 * mat.m10 + m12 * mat.m20;
+        out.m11 = m10 * mat.m01 + m11 * mat.m11 + m12 * mat.m21;
+        out.m12 = m10 * mat.m02 + m11 * mat.m12 + m12 * mat.m22;
+        out.m20 = m20 * mat.m00 + m21 * mat.m10 + m22 * mat.m20;
+        out.m21 = m20 * mat.m01 + m21 * mat.m11 + m22 * mat.m21;
+        out.m22 = m20 * mat.m02 + m21 * mat.m12 + m22 * mat.m22;
         return out;
     }
 
-    public Matrix33 mult(Matrix33 in, Matrix33 out){
-        out.m00 = m00 * in.m00 + m01 * in.m10 + m02 * in.m20;
-        out.m01 = m00 * in.m01 + m01 * in.m11 + m02 * in.m21;
-        out.m02 = m00 * in.m02 + m01 * in.m12 + m02 * in.m22;
-        out.m10 = m10 * in.m00 + m11 * in.m10 + m12 * in.m20;
-        out.m11 = m10 * in.m01 + m11 * in.m11 + m12 * in.m21;
-        out.m12 = m10 * in.m02 + m11 * in.m12 + m12 * in.m22;
-        out.m20 = m20 * in.m00 + m21 * in.m10 + m22 * in.m20;
-        out.m21 = m20 * in.m01 + m21 * in.m11 + m22 * in.m21;
-        out.m22 = m20 * in.m02 + m21 * in.m12 + m22 * in.m22;
+    public Matrix33 mult(Matrix33 mat, Matrix33 out){
+        float t00 = m00 * mat.m00 + m01 * mat.m10 + m02 * mat.m20;
+        float t01 = m00 * mat.m01 + m01 * mat.m11 + m02 * mat.m21;
+        float t02 = m00 * mat.m02 + m01 * mat.m12 + m02 * mat.m22;
+        float t10 = m10 * mat.m00 + m11 * mat.m10 + m12 * mat.m20;
+        float t11 = m10 * mat.m01 + m11 * mat.m11 + m12 * mat.m21;
+        float t12 = m10 * mat.m02 + m11 * mat.m12 + m12 * mat.m22;
+        float t20 = m20 * mat.m00 + m21 * mat.m10 + m22 * mat.m20;
+        float t21 = m20 * mat.m01 + m21 * mat.m11 + m22 * mat.m21;
+        float t22 = m20 * mat.m02 + m21 * mat.m12 + m22 * mat.m22;
+        out.m00 = t00;  out.m01 = t01;  out.m02 = t02;
+        out.m10 = t10;  out.m11 = t11;  out.m12 = t12;
+        out.m20 = t20;  out.m21 = t21;  out.m22 = t22;
         return out;
     }
     

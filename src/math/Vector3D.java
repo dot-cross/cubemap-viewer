@@ -43,15 +43,39 @@ public final class Vector3D {
     }
 
     public Vector3D add(Vector3D vec) {
-        return new Vector3D(x + vec.x, y + vec.y, z + vec.z);
+        Vector3D out = new Vector3D();
+        return add(this, out);
+    }
+    
+    public Vector3D add(Vector3D vec, Vector3D out) {
+        out.x = x + vec.x;
+        out.y = y + vec.y;
+        out.z = z + vec.z;
+        return out;
     }
 
-    public Vector3D sub(Vector3D vec){
-        return new Vector3D(x - vec.x, y - vec.y, x - vec.z);
+    public Vector3D sub(Vector3D vec) {
+        Vector3D out = new Vector3D();
+        return sub(this, out);
+    }
+    
+    public Vector3D sub(Vector3D vec, Vector3D out) {
+        out.x = x - vec.x;
+        out.y = y - vec.y;
+        out.z = z - vec.z;
+        return out;
     }
     
     public Vector3D scale(float k){
-        return new Vector3D(k * x, k * y, k * z);
+        Vector3D out = new Vector3D();
+        return scale(k, out);
+    }
+    
+    public Vector3D scale(float k, Vector3D out){
+        out.x = k * x;
+        out.y = k * y;
+        out.z = k * z;
+        return out;
     }
             
     public float dot(Vector3D vec) {
@@ -59,13 +83,15 @@ public final class Vector3D {
     }
     
     public Vector3D cross(Vector3D vec){
-        return new Vector3D(y * vec.z - z * vec.y, z * vec.x - x * vec.z, x * vec.y - y * vec.x);
+        Vector3D out = new Vector3D();
+        return cross(vec, out);
     }
     
-    public Vector3D normalizedCross(Vector3D vec){
-        Vector3D cross = new Vector3D(y * vec.z - z * vec.y, z * vec.x - x * vec.z, x * vec.y - y * vec.x);
-        cross.normalize();
-        return cross;
+    public Vector3D cross(Vector3D vec, Vector3D out){
+        out.x = y * vec.z - z * vec.y;
+        out.y = z * vec.x - x * vec.z;
+        out.z = x * vec.y - y * vec.x;
+        return out;
     }
     
     public Vector3D getNormal(){
@@ -90,14 +116,14 @@ public final class Vector3D {
         return normal;
     }
 
-    public float angle(Vector3D vec0, Vector3D vec1){
+    public static float angle(Vector3D vec0, Vector3D vec1){
         float length0 = vec0.length();
         float length1 = vec1.length();
         float dot = MathUtils.clamp(vec0.dot(vec1) / (length0*length1), -1.0f, 1.0f);
         return (float)Math.acos(dot);
     }
     
-    public Vector3D reflection(Vector3D normalVec, Vector3D incidentVec){
+    public static Vector3D reflection(Vector3D normalVec, Vector3D incidentVec){
         float normalDotIncident = normalVec.dot(incidentVec);
         Vector3D reflectionVec = incidentVec.sub(normalVec.scale(2.0f * normalDotIncident));
         return reflectionVec;
