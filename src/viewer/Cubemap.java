@@ -224,6 +224,7 @@ public class Cubemap {
         }
         BufferedImage imageTmp;
         String fileName;
+        Graphics g;
         // Load Positive X
         fileName = posXFile.getName();
         imageTmp = ImageIO.read(posXFile);
@@ -234,7 +235,9 @@ public class Cubemap {
             throw new IOException(fileName + " is not a square image");
         }
         BufferedImage posXImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        posXImage.getGraphics().drawImage(imageTmp, 0, 0, null);
+        g = posXImage.createGraphics();
+        g.drawImage(imageTmp, 0, 0, null);
+        g.dispose();
         // Load Negative X
         fileName = negXFile.getName();
         imageTmp = ImageIO.read(negXFile);
@@ -245,7 +248,9 @@ public class Cubemap {
             throw new IOException(fileName + " is not a square image");
         }
         BufferedImage negXImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        negXImage.getGraphics().drawImage(imageTmp, 0, 0, null);
+        g = negXImage.createGraphics();
+        g.drawImage(imageTmp, 0, 0, null);
+        g.dispose();
         // Positive Y
         fileName = posYFile.getName();
         imageTmp = ImageIO.read(posYFile);
@@ -256,7 +261,9 @@ public class Cubemap {
             throw new IOException(fileName + " is not a square image");
         }
         BufferedImage posYImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        posYImage.getGraphics().drawImage(imageTmp, 0, 0, null);
+        g = posYImage.createGraphics();
+        g.drawImage(imageTmp, 0, 0, null);
+        g.dispose();
         // Negative Y
         fileName = negYFile.getName();
         imageTmp = ImageIO.read(negYFile);
@@ -267,7 +274,9 @@ public class Cubemap {
             throw new IOException(fileName + " is not a square image");
         }
         BufferedImage negYImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        negYImage.getGraphics().drawImage(imageTmp, 0, 0, null);
+        g = negYImage.createGraphics();
+        g.drawImage(imageTmp, 0, 0, null);
+        g.dispose();
         // Positive Z
         fileName = posZFile.getName();
         imageTmp = ImageIO.read(posZFile);
@@ -278,7 +287,9 @@ public class Cubemap {
             throw new IOException(fileName + " is not a square image");
         }
         BufferedImage posZImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        posZImage.getGraphics().drawImage(imageTmp, 0, 0, null);
+        g = posZImage.createGraphics();
+        g.drawImage(imageTmp, 0, 0, null);
+        g.dispose();
         // Negative Z
         fileName = negZFile.getName();
         imageTmp = ImageIO.read(negZFile);
@@ -289,7 +300,9 @@ public class Cubemap {
             throw new IOException(fileName + " is not a square image");
         }
         BufferedImage negZImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        negZImage.getGraphics().drawImage(imageTmp, 0, 0, null);
+        g = negZImage.createGraphics();
+        g.drawImage(imageTmp, 0, 0, null);
+        g.dispose();
         if(posXImage.getWidth() != negXImage.getWidth() || negXImage.getWidth() != posYImage.getWidth() ||
                 posYImage.getWidth() != negYImage.getWidth() || negYImage.getWidth() != posZImage.getWidth() ||
                 posZImage.getWidth() != negZImage.getWidth()){
@@ -323,6 +336,7 @@ public class Cubemap {
         tx = size / 2 - txtWidth / 2;
         ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("+X", tx, ty);
+        g.dispose();
         // Negative X
         BufferedImage negXImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         g = negXImage.createGraphics();
@@ -341,6 +355,7 @@ public class Cubemap {
         tx = size / 2 - txtWidth / 2;
         ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("-X", tx, ty);
+        g.dispose();
         // Positive Y
         BufferedImage posYImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         g = posYImage.createGraphics();
@@ -359,6 +374,7 @@ public class Cubemap {
         tx = size / 2 - txtWidth / 2;
         ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("+Y", tx, ty);
+        g.dispose();
         // Negative Y
         BufferedImage negYImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         g = negYImage.createGraphics();
@@ -377,6 +393,7 @@ public class Cubemap {
         tx = size / 2 - txtWidth / 2;
         ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("-Y", tx, ty);
+        g.dispose();
         // Positive Z
         BufferedImage posZImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         g = posZImage.createGraphics();
@@ -395,6 +412,7 @@ public class Cubemap {
         tx = size / 2 - txtWidth / 2;
         ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("+Z", tx, ty);
+        g.dispose();
         // Negative Z
         BufferedImage negZImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         g = negZImage.createGraphics();
@@ -413,6 +431,7 @@ public class Cubemap {
         tx = size / 2 - txtWidth / 2;
         ty = size / 2 - txtHeight / 2 + txtAscent;
         g.drawString("-Z", tx, ty);
+        g.dispose();
         return new Cubemap(posXImage, negXImage, posYImage, negYImage, posZImage, negZImage);
     }
 }

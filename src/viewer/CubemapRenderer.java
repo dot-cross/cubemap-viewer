@@ -118,11 +118,19 @@ public class CubemapRenderer extends Thread {
     }
     
     public int getWidth(){
-        return rp.width;
+        int value;
+        synchronized(rp){
+            value = rp.width;
+        }
+        return value;
     }
     
     public int getHeight(){
-        return rp.height;
+        int value;
+        synchronized(rp){
+            value = rp.height;
+        }
+        return value;
     }
     
     public void setWindowSize(int width, int height){
@@ -137,7 +145,11 @@ public class CubemapRenderer extends Thread {
     }
     
     public Matrix33 getOrientation(){
-        return new Matrix33(rp.orientation, false);
+        Matrix33 mat = new Matrix33();
+        synchronized(rp){
+            mat.assign(rp.orientation);
+        }
+        return mat;
     }
     
     public void setOrientation(Matrix33 orientation){
@@ -151,7 +163,11 @@ public class CubemapRenderer extends Thread {
     }
     
     public float getFov(){
-        return rp.fov;
+        float value;
+        synchronized(rp){
+            value = rp.fov;
+        }
+        return value;
     }
     
     public void setFov(float fov){
@@ -162,7 +178,11 @@ public class CubemapRenderer extends Thread {
     }
     
     public boolean isShowReference(){
-        return rp.showReference;
+        boolean value;
+        synchronized(rp){
+            value = rp.showReference;
+        }
+        return value;
     }
     
     public void showReference(boolean showReference){
@@ -173,7 +193,11 @@ public class CubemapRenderer extends Thread {
     }
     
     public boolean isLerp(){
-        return rp.lerp;
+        boolean value;
+        synchronized(rp){
+            value = rp.lerp;
+        }
+        return value;
     }
     
     public void setLerp(boolean lerp){
@@ -184,7 +208,11 @@ public class CubemapRenderer extends Thread {
     }
     
     public Cubemap getCubemap(){
-        return cubemap;
+        Cubemap image;
+        synchronized(rp){
+            image = rp.cubemap;
+        }
+        return image;
     }
     
     public void setCubemap(Cubemap cubemap){
@@ -257,7 +285,11 @@ public class CubemapRenderer extends Thread {
                 if (updateProjection) {
                     calculateProjection();
                 }
-                if(cubemap == null || frontBuffer == null || backBuffer == null){
+                if (cubemap == null || frontBuffer == null || backBuffer == null) {
+                    try {
+                        Thread.sleep(5);
+                    } catch (InterruptedException e) {
+                    }
                     continue;
                 }
                 // Start render
