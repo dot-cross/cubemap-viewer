@@ -8,12 +8,10 @@ The files names need to be: posx, negx, posy, negy, posz, negz or alternatively:
 #### Image format support
 JPEG, PNG, BMP
 #### Where to find cubemaps ?
-Emil Persson has some really nice cubemaps on his site: http://www.humus.name/index.php?page=Textures
+Emil Persson has really nice cubemaps in his site: http://www.humus.name/index.php?page=Textures
 #### Controls
 - Rotate camera: Click and drag
 - Zoom: Scroll wheel
 - Toggle reference: R
 - Toggle info (fps, fov, filter): I
-- Use nearest neighbour: N
-- Use bilinear interpolation: B
 - Reset camera orientation: Space
