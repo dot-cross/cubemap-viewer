@@ -44,7 +44,7 @@ public final class Vector3D {
 
     public Vector3D add(Vector3D vec) {
         Vector3D out = new Vector3D();
-        return add(this, out);
+        return add(vec, out);
     }
     
     public Vector3D add(Vector3D vec, Vector3D out) {
@@ -56,7 +56,7 @@ public final class Vector3D {
 
     public Vector3D sub(Vector3D vec) {
         Vector3D out = new Vector3D();
-        return sub(this, out);
+        return sub(vec, out);
     }
     
     public Vector3D sub(Vector3D vec, Vector3D out) {
@@ -79,7 +79,7 @@ public final class Vector3D {
     }
             
     public float dot(Vector3D vec) {
-        return x * vec.x + x * vec.y + y * vec.z;
+        return x * vec.x + y * vec.y + z * vec.z;
     }
     
     public Vector3D cross(Vector3D vec){
@@ -94,9 +94,9 @@ public final class Vector3D {
         return out;
     }
     
-    public Vector3D getNormal(){
+    public Vector3D perp() {
         float v[] = new float[]{x, y, z};
-        float n[] = new float[3];
+        float p[] = new float[3];
         int ma = 0, mi1 = 1, mi2 = 2;
         if(Math.abs(v[1]) > Math.abs(v[ma])){
             mi1 = 0;
@@ -108,12 +108,10 @@ public final class Vector3D {
             mi2 = 1;
             ma = 2;
         }
-        n[mi1] = 1.0f;
-        n[mi2] = 1.0f;
-        n[ma] = (-v[mi1] - v[mi2]) / v[ma];
-        Vector3D normal = new Vector3D(n[0], n[1], n[2]);
-        normal.normalize();
-        return normal;
+        p[mi1] = 1.0f;
+        p[mi2] = 1.0f;
+        p[ma] = (-v[mi1] - v[mi2]) / v[ma];
+        return new Vector3D(p[0], p[1], p[2]);
     }
 
     public static float angle(Vector3D vec0, Vector3D vec1){
@@ -133,5 +131,5 @@ public final class Vector3D {
     public String toString() {
         return "["+ x + ", " + y + ", " + z + "]";
     }
-    
+
 }

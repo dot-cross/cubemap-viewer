@@ -1,5 +1,7 @@
 package viewer;
 
+import java.awt.Color;
+import java.awt.Font;
 import math.Matrix33;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
@@ -8,13 +10,19 @@ import java.awt.image.WritableRaster;
 import math.MathUtils;
 import math.Vector2D;
 import math.Vector3D;
+import java.awt.Graphics;
+import java.text.DecimalFormat;
 
 /**
- *
+ * Class for interactive rendering of cubemaps.
+ * Performs processing and drawing of new images asynchronously.
  * @author edu
  */
 public class CubemapRenderer extends Thread {
     
+    /**
+     * Inner class for render parameters.
+     */
     private static class RenderParams {
 
         public static final int RP_CUBEMAP = 1;
@@ -23,7 +31,8 @@ public class CubemapRenderer extends Thread {
         public static final int RP_ORIENTATION = 1 << 3;
         public static final int RP_REFERENCE = 1 << 4;
         public static final int RP_LERP = 1 << 5;
-        public static final int RP_ALL = RP_CUBEMAP | RP_WINDOW_SIZE | RP_FOV | RP_ORIENTATION | RP_REFERENCE | RP_LERP;
+        public static final int RP_SHOW_INFO = 1 << 6;
+        public static final int RP_ALL = RP_CUBEMAP | RP_WINDOW_SIZE | RP_FOV | RP_ORIENTATION | RP_REFERENCE | RP_LERP | RP_SHOW_INFO;
         public int flags;
         public Cubemap cubemap;
         public int width, height;
@@ -31,12 +40,15 @@ public class CubemapRenderer extends Thread {
         public Matrix33 orientation;
         public boolean showReference;
         public boolean lerp;
+        public boolean showInfo;
         
         public RenderParams(){
             fov = 75.0f;
             orientation = new Matrix33(1.0f);
+            lerp = true;
+            showInfo = true;
         }
-        
+
         public RenderParams copy(){
             RenderParams copy = new RenderParams();
             copy.flags = flags;
@@ -47,40 +59,57 @@ public class CubemapRenderer extends Thread {
             copy.orientation.assign(orientation);
             copy.showReference = showReference;
             copy.lerp = lerp;
+            copy.showInfo = showInfo;
             return copy;
         }
     }
     
-    private final CubemapPanel panel;
+    private final CubemapViewer viewer;
     private Cubemap cubemap;
-    private static final Cubemap cubemapReference = Cubemap.createReferenceCubemap();
     private final RenderParams rp;
-    private BufferedImage frontBufferImage, backBufferImage;
-    private int frontBuffer[], backBuffer[];
+    private BufferedImage colorBufferImage;
+    private int colorBuffer[];
     private int windowWidth, windowHeight;
     private final float projDistance = 5.0f;
     private float fov, aspectRatio;
     private float windowLeft, windowRight, xRange;
     private float windowBottom, windowTop, yRange;
     private final Matrix33 orientation;
-    private boolean showReference, lerp;
+    private boolean showReference, showInfo, lerp;
     private boolean alive;
-    private int threadNumber;
+    private int avalaibleProcessors;
     private ImageProcessor processors[];
+    private long frames, lastTime;
+    private float fps;
+    private final Color fontBgColor = new Color(0, 0, 0, 80);
+    private final DecimalFormat df = new DecimalFormat("###.##");
+    private final Font font = new Font("Tahoma", Font.PLAIN, 11);
     
-    public CubemapRenderer(CubemapPanel panel){
+    /**
+     * Creates a new Cubemap Renderer
+     * @param viewer The component to draw.
+     */
+    public CubemapRenderer(CubemapViewer viewer){
         super("Cubemap Renderer");
-        this.panel = panel;
+        if(viewer == null){
+            throw new NullPointerException("Cubemap Viewer is null");
+        }
+        this.viewer = viewer;
         rp = new RenderParams();
         fov = 75.0f;
         orientation = new Matrix33(1.0f);
+        showInfo = true;
+        lerp = true;
     }
     
+    /**
+     * Start processing of new parameters and drawing. Ignored if already started.
+     */
     public void init(){
         if (processors == null) {
-            threadNumber = Runtime.getRuntime().availableProcessors();
-            processors = new ImageProcessor[threadNumber];
-            for (int i = 0; i < threadNumber; i++) {
+            avalaibleProcessors = Runtime.getRuntime().availableProcessors();
+            processors = new ImageProcessor[avalaibleProcessors];
+            for (int i = 0; i < avalaibleProcessors; i++) {
                 processors[i] = new ImageProcessor();
                 processors[i].start();
             }
@@ -89,6 +118,9 @@ public class CubemapRenderer extends Thread {
         }
     }
     
+    /**
+     * Stop processing of new parameters and drawing. Ignored if already stopped.
+     */
     public void release(){
         if(isAlive()){
             alive = false;
@@ -96,7 +128,7 @@ public class CubemapRenderer extends Thread {
                 join();
             } catch (InterruptedException ex) {
             }
-            for (int i = 0; i < threadNumber; i++) {
+            for (int i = 0; i < avalaibleProcessors; i++) {
                 processors[i].alive = false;
                 try {
                     processors[i].join();
@@ -117,6 +149,10 @@ public class CubemapRenderer extends Thread {
         yRange = windowTop * 2.0f;
     }
     
+    /**
+     * Get width from current render parameters.
+     * @return Width of rendered image.
+     */
     public int getWidth(){
         int value;
         synchronized(rp){
@@ -125,6 +161,10 @@ public class CubemapRenderer extends Thread {
         return value;
     }
     
+    /**
+     * Get height from current render parameters.
+     * @return Height of rendered image.
+     */
     public int getHeight(){
         int value;
         synchronized(rp){
@@ -133,9 +173,14 @@ public class CubemapRenderer extends Thread {
         return value;
     }
     
-    public void setWindowSize(int width, int height){
+    /**
+     * Set new render size to be processed.
+     * @param width Width of rendered image.
+     * @param height Height of rendered image.
+     */
+    public void setRenderSize(int width, int height){
         if(width <= 0 || height <= 0){
-            throw new IllegalArgumentException("Invalid window size");
+            throw new IllegalArgumentException("Invalid render size");
         }
         synchronized(rp){
             rp.flags |= RenderParams.RP_WINDOW_SIZE;
@@ -144,6 +189,10 @@ public class CubemapRenderer extends Thread {
         }
     }
     
+    /**
+     * Get orientation from current render parameters.
+     * @return Orientation matrix
+     */
     public Matrix33 getOrientation(){
         Matrix33 mat = new Matrix33();
         synchronized(rp){
@@ -152,6 +201,10 @@ public class CubemapRenderer extends Thread {
         return mat;
     }
     
+    /**
+     * Set new orientation matrix to be processed.
+     * @param orientation Orientation matrix.
+     */
     public void setOrientation(Matrix33 orientation){
         if(orientation == null){
             throw new NullPointerException();
@@ -162,6 +215,10 @@ public class CubemapRenderer extends Thread {
         }
     }
     
+    /**
+     * Get field of view from current render parameters.
+     * @return Field of view.
+     */
     public float getFov(){
         float value;
         synchronized(rp){
@@ -170,6 +227,10 @@ public class CubemapRenderer extends Thread {
         return value;
     }
     
+    /**
+     * Set new field of view to be processed.
+     * @param fov New Field of View. Clamped to [2, 175].
+     */
     public void setFov(float fov){
         synchronized(rp){
             rp.flags |= RenderParams.RP_FOV;
@@ -177,6 +238,10 @@ public class CubemapRenderer extends Thread {
         }
     }
     
+    /**
+     * Checks if cubemap reference is enabled from current render parameters.
+     * @return true if showing reference, false otherwise.
+     */
     public boolean isShowReference(){
         boolean value;
         synchronized(rp){
@@ -185,6 +250,10 @@ public class CubemapRenderer extends Thread {
         return value;
     }
     
+    /**
+     * Enable/Disable drawing of cubemap reference on the rendered image.
+     * @param showReference True to show reference, false otherwise.
+     */
     public void showReference(boolean showReference){
         synchronized(rp){
             rp.flags |= RenderParams.RP_REFERENCE;
@@ -192,6 +261,10 @@ public class CubemapRenderer extends Thread {
         }
     }
     
+    /**
+     * Checks if linear interpolation is enabled from current render parameters.
+     * @return true if linear interpolation is enabled, false otherwise.
+     */
     public boolean isLerp(){
         boolean value;
         synchronized(rp){
@@ -200,6 +273,10 @@ public class CubemapRenderer extends Thread {
         return value;
     }
     
+    /**
+     * Enable/Disable use of linear interpolation.
+     * @param lerp true if linear interpolation will be used, false otherwise.
+     */
     public void setLerp(boolean lerp){
         synchronized(rp){
             rp.flags |= RenderParams.RP_LERP;
@@ -207,6 +284,10 @@ public class CubemapRenderer extends Thread {
         }
     }
     
+    /**
+     * Get cubemap from current render parameters.
+     * @return Cubemap image.
+     */
     public Cubemap getCubemap(){
         Cubemap image;
         synchronized(rp){
@@ -215,20 +296,76 @@ public class CubemapRenderer extends Thread {
         return image;
     }
     
+    /**
+     * Set new cubemap to be processed.
+     * @param cubemap Cubemap image. If null a black image will be drawn.
+     */
     public void setCubemap(Cubemap cubemap){
-        if(cubemap == null){
-            throw new NullPointerException();
-        }
         synchronized(rp){
             rp.flags |= RenderParams.RP_CUBEMAP;
             rp.cubemap = cubemap;
         }
     }
+    
+    /**
+     * Checks if text info (fps, fov, filter) is enabled from current render parameters.
+     * @return true if 
+     */
+    public boolean isShowInfo(){
+        boolean value;
+        synchronized(rp){
+            value = rp.showInfo;
+        }
+        return value;
+    }
+    
+    /**
+     * Enable/Disable drawing of text info (fps, fov, filter) on rendered image.
+     * @param showInfo 
+     */
+    public void setShowInfo(boolean showInfo){
+        synchronized(rp){
+            rp.flags |= RenderParams.RP_SHOW_INFO;
+            rp.showInfo = showInfo;
+        }
+    }
 
+    /**
+     * Update frames per second.
+     */
+    private void fps(){
+        frames++;
+        long time = System.currentTimeMillis();
+        long diff = time - lastTime;
+        if(diff >= 1000){
+            fps = frames * 1000.0f / diff;
+            frames = 0;
+            lastTime = time;
+        }
+    }
+    
+    /**
+     * Draw info on rendered image: fps, fov, and interpolation method.
+     */
+    protected void drawInfo() {
+        if(showInfo && cubemap != null){
+            Graphics g = colorBufferImage.createGraphics();
+            g.setFont(font);
+            g.setColor(fontBgColor);
+            g.fillRect(5, 5, 110, 55);
+            g.setColor(Color.WHITE);
+            g.drawString("FPS: "+df.format(fps), 15, 20);
+            g.drawString("FOV: "+df.format(fov), 15, 35);
+            g.drawString("FILTER: "+ (lerp ? "Bilinear": "Nearest"), 15, 50);
+            g.dispose();
+        }
+    }
+    
     @Override
     public void run() {
         while (alive) {
             RenderParams newRP = null;
+            // Check for new parameters
             synchronized (rp) {
                 if(rp.flags != 0){
                     newRP = rp.copy();
@@ -236,34 +373,26 @@ public class CubemapRenderer extends Thread {
                 }
             }
             if (newRP != null) {
-                // Update internal state
+                // Process the new parameters and update internal state
                 boolean updateProjection = false;
                 if((newRP.flags & RenderParams.RP_CUBEMAP) != 0){
                     cubemap = newRP.cubemap;
                 }
                 if ((newRP.flags & RenderParams.RP_WINDOW_SIZE) != 0 && (windowWidth != newRP.width || windowHeight != newRP.height)) {
-                    WritableRaster wr;
-                    DataBuffer db;
-                    DataBufferInt dbi;
                     windowWidth = newRP.width;
                     windowHeight = newRP.height;
-                    frontBufferImage = new BufferedImage(windowWidth, windowHeight, BufferedImage.TYPE_INT_RGB);
-                    wr = frontBufferImage.getRaster();
-                    db = wr.getDataBuffer();
-                    dbi = (DataBufferInt) db;
-                    frontBuffer = dbi.getData();
-                    backBufferImage = new BufferedImage(windowWidth, windowHeight, BufferedImage.TYPE_INT_RGB);
-                    wr = backBufferImage.getRaster();
-                    db = wr.getDataBuffer();
-                    dbi = (DataBufferInt) db;
-                    backBuffer = dbi.getData();
+                    colorBufferImage = new BufferedImage(windowWidth, windowHeight, BufferedImage.TYPE_INT_RGB);
+                    WritableRaster wr = colorBufferImage.getRaster();
+                    DataBuffer db = wr.getDataBuffer();
+                    DataBufferInt dbi = (DataBufferInt) db;
+                    colorBuffer = dbi.getData();
                     updateProjection = true;
-                    int batch = windowHeight / threadNumber;
-                    if (threadNumber * batch < windowHeight) {
+                    int batch = windowHeight / avalaibleProcessors;
+                    if (avalaibleProcessors * batch < windowHeight) {
                         batch++;
                     }
                     int startRow = 0, endRow;
-                    for (int i = 0; i < threadNumber; i++) {
+                    for (int i = 0; i < avalaibleProcessors; i++) {
                         endRow = startRow + batch;
                         processors[i].setRowRange(startRow, Math.min(endRow, windowHeight));
                         startRow = endRow;
@@ -282,36 +411,54 @@ public class CubemapRenderer extends Thread {
                 if((newRP.flags & RenderParams.RP_LERP) != 0){
                     lerp = newRP.lerp;
                 }
+                if((newRP.flags & RenderParams.RP_SHOW_INFO) != 0){
+                    showInfo = newRP.showInfo;
+                }
                 if (updateProjection) {
                     calculateProjection();
                 }
-                if (cubemap == null || frontBuffer == null || backBuffer == null) {
+                if (colorBufferImage == null) {
                     try {
                         Thread.sleep(5);
                     } catch (InterruptedException e) {
                     }
                     continue;
                 }
-                // Start render
-                for (int i = 0; i < threadNumber; i++) {
-                    processors[i].render = true;
-                }
-                for (int i = 0; i < threadNumber; i++) {
-                    while (processors[i].render) {
-                        try {
-                            Thread.sleep(1);
-                        } catch (InterruptedException e) {
+                // Draw image
+                if(cubemap != null){
+                    // Start render threads
+                    for (int i = 0; i < avalaibleProcessors; i++) {
+                        processors[i].render = true;
+                    }
+                    // Wait for render threads to finish
+                    for (int i = 0; i < avalaibleProcessors; i++) {
+                        while (processors[i].render) {
+                            try {
+                                Thread.sleep(1);
+                            } catch (InterruptedException e) {
+                            }
                         }
                     }
+                }else{
+                    // If cubemap is null, draw a black image.
+                    Graphics gi = colorBufferImage.createGraphics();
+                    gi.setColor(Color.BLACK);
+                    gi.fillRect(0, 0, windowWidth, windowHeight);
+                    gi.dispose();
                 }
-                //Swap buffers
-                BufferedImage tmpImage = frontBufferImage;
-                int tmpBuffer[] = frontBuffer;
-                frontBufferImage = backBufferImage;
-                frontBuffer = backBuffer;
-                backBufferImage = tmpImage;
-                backBuffer = tmpBuffer;
-                panel.setOutputImage(frontBufferImage);
+                // Update fps
+                fps();
+                // Draw info over image
+                drawInfo();
+                // Write color buffer directly to graphics context. (Active Rendering).
+                Graphics gv = viewer.getGraphics();
+                if (gv != null) {
+                    gv.drawImage(colorBufferImage, 0, 0, null);
+                    gv.dispose();
+                }
+                // Pass image to cubemap viewer. This is necessary to restore component content in the paintComponent callback.
+                viewer.setOutputImage(colorBufferImage);
+
             } else {
                 try {
                     Thread.sleep(5);
@@ -321,16 +468,27 @@ public class CubemapRenderer extends Thread {
         }
     }
 
+    /**
+     * Thread for drawing a part of the image.
+     */
     class ImageProcessor extends Thread {
 
         private int startRow, endRow;
         private boolean alive, render;
         
+        /**
+         * Creates a new Image Processor.
+         */
         public ImageProcessor(){
             super("Image Processor");
             alive = true;
         }
         
+        /**
+         * Specify the row range.
+         * @param startRow Start row.
+         * @param endRow End row. Not inclusive.
+         */
         public void setRowRange(int startRow, int endRow){
             this.startRow = startRow;
             this.endRow = endRow;
@@ -340,8 +498,8 @@ public class CubemapRenderer extends Thread {
         public void run() {
             while (alive) {
                 if (render) {
-                    int width = backBufferImage.getWidth();
-                    int height = backBufferImage.getHeight();
+                    int width = colorBufferImage.getWidth();
+                    int height = colorBufferImage.getHeight();
                     Vector3D inDir = new Vector3D();
                     Vector2D nc = new Vector2D();
                     inDir.z = projDistance;
@@ -355,8 +513,7 @@ public class CubemapRenderer extends Thread {
                                 nc.x = (x + 0.5f) * oneOverWidth;
                                 inDir.x = windowLeft + xRange * nc.x;
                                 orientation.mult(inDir, outDir);
-                                int color = cubemap.sampleCubemap(outDir, lerp);
-                                backBuffer[y * width + x] = color;
+                                colorBuffer[y * width + x] = cubemap.sampleCubemap(outDir, lerp);
                             }
                         }
                     } else {
@@ -367,13 +524,7 @@ public class CubemapRenderer extends Thread {
                                 nc.x = (x + 0.5f) * oneOverWidth;
                                 inDir.x = windowLeft + xRange * nc.x;
                                 orientation.mult(inDir, outDir);
-                                int reference = cubemapReference.sampleCubemap(outDir, false);
-                                if(((reference >> 24) & 0xFF) != 0){
-                                    backBuffer[y * width + x] = reference;
-                                }else{
-                                    int color = cubemap.sampleCubemap(outDir, lerp);
-                                    backBuffer[y * width + x] = color;
-                                }
+                                colorBuffer[y * width + x] = cubemap.sampleCubemapRef(outDir, lerp);
                             }
                         }
                     }
@@ -388,6 +539,18 @@ public class CubemapRenderer extends Thread {
         }
     }
 
+    /**
+     * Render an image from given parameters.
+     * The type of the image returned is: BufferedImage.TYPE_INT_RGB.
+     * @param cubemap Cubemap image.
+     * @param orientation Orientation matrix.
+     * @param fov Field of view.
+     * @param showReference If the cubemap reference will be drawn on rendered image.
+     * @param lerp If linear interpolation will be used.
+     * @param width Width of rendered image.
+     * @param height Height of rendered image.
+     * @return rendered image 
+     */
     public static final BufferedImage render(Cubemap cubemap, Matrix33 orientation, float fov, boolean showReference, boolean lerp, int width, int height){
         if(cubemap == null){
             throw new NullPointerException();
@@ -432,8 +595,7 @@ public class CubemapRenderer extends Thread {
                     nc.x = (x + 0.5f) * oneOverWidth;
                     inDir.x = windowLeft + xRange * nc.x;
                     orientation.mult(inDir, outDir);
-                    int color = cubemap.sampleCubemap(outDir, lerp);
-                    buffer[y * width + x] = color;
+                    buffer[y * width + x] = cubemap.sampleCubemap(outDir, lerp);
                 }
             }
         } else {
@@ -444,13 +606,7 @@ public class CubemapRenderer extends Thread {
                     nc.x = (x + 0.5f) * oneOverWidth;
                     inDir.x = windowLeft + xRange * nc.x;
                     orientation.mult(inDir, outDir);
-                    int reference = cubemapReference.sampleCubemap(outDir, false);
-                    if(((reference >> 24) & 0xFF) != 0){
-                        buffer[y * width + x] = reference;
-                    }else{
-                        int color = cubemap.sampleCubemap(outDir, lerp);
-                        buffer[y * width + x] = color;
-                    }
+                    buffer[y * width + x] = cubemap.sampleCubemapRef(outDir, lerp);
                 }
             }
         }

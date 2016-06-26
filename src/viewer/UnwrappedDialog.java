@@ -5,12 +5,13 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 /**
- *
+ * Dialog for showing the unwrapped cubemap.
  * @author edu
  */
 public class UnwrappedDialog extends JDialog {
@@ -34,6 +35,7 @@ public class UnwrappedDialog extends JDialog {
 
         @Override
         protected void paintComponent(Graphics g) {
+            BufferedImage imageArray[] = cubemap.getImageArray();
             int panelWidth = getWidth(), panelHeight = getHeight();
             g.setColor(Color.WHITE);
             g.fillRect(0, 0, panelWidth, panelHeight);
@@ -44,7 +46,7 @@ public class UnwrappedDialog extends JDialog {
             int tx, ty, txtWidth, txtHeight, txtAscent;
             g.setColor(Color.BLUE);
             // Draw negative x
-            g.drawImage(cubemap.images[Cubemap.NEGX], 0, imageHeight, imageWidth, imageHeight, null);
+            g.drawImage(imageArray[Cubemap.NEGX], 0, imageHeight, imageWidth, imageHeight, null);
             txtWidth = m.stringWidth("-X");
             txtHeight = m.getHeight();
             txtAscent = m.getAscent();
@@ -52,7 +54,7 @@ public class UnwrappedDialog extends JDialog {
             ty = imageHeight + imageHeight / 2 - txtHeight / 2 + txtAscent;
             g.drawString("-X", tx, ty);
             // Draw positive z
-            g.drawImage(cubemap.images[Cubemap.POSZ], imageWidth, imageHeight, imageWidth, imageHeight, null);
+            g.drawImage(imageArray[Cubemap.POSZ], imageWidth, imageHeight, imageWidth, imageHeight, null);
             txtWidth = m.stringWidth("+Z");
             txtHeight = m.getHeight();
             txtAscent = m.getAscent();
@@ -60,7 +62,7 @@ public class UnwrappedDialog extends JDialog {
             ty = imageHeight + imageHeight / 2 - txtHeight / 2 + txtAscent;
             g.drawString("+Z", tx, ty);
             // Draw positive x
-            g.drawImage(cubemap.images[Cubemap.POSX], 2 * imageWidth, imageHeight, imageWidth, imageHeight, null);
+            g.drawImage(imageArray[Cubemap.POSX], 2 * imageWidth, imageHeight, imageWidth, imageHeight, null);
             txtWidth = m.stringWidth("+X");
             txtHeight = m.getHeight();
             txtAscent = m.getAscent();
@@ -68,7 +70,7 @@ public class UnwrappedDialog extends JDialog {
             ty = imageHeight + imageHeight / 2 - txtHeight / 2 + txtAscent;
             g.drawString("+X", tx, ty);
             // Draw negative z
-            g.drawImage(cubemap.images[Cubemap.NEGZ], 3 * imageWidth, imageHeight, imageWidth, imageHeight, null);
+            g.drawImage(imageArray[Cubemap.NEGZ], 3 * imageWidth, imageHeight, imageWidth, imageHeight, null);
             txtWidth = m.stringWidth("-Z");
             txtHeight = m.getHeight();
             txtAscent = m.getAscent();
@@ -76,7 +78,7 @@ public class UnwrappedDialog extends JDialog {
             ty = imageHeight + imageHeight / 2 - txtHeight / 2 + txtAscent;
             g.drawString("-Z", tx, ty);
             // Draw postive y
-            g.drawImage(cubemap.images[Cubemap.POSY], imageWidth, 0, imageWidth, imageHeight, null);
+            g.drawImage(imageArray[Cubemap.POSY], imageWidth, 0, imageWidth, imageHeight, null);
             txtWidth = m.stringWidth("+Y");
             txtHeight = m.getHeight();
             txtAscent = m.getAscent();
@@ -84,7 +86,7 @@ public class UnwrappedDialog extends JDialog {
             ty = imageHeight / 2 - txtHeight / 2 + txtAscent;
             g.drawString("+Y", tx, ty);
             // Draw negative y
-            g.drawImage(cubemap.images[Cubemap.NEGY], imageWidth, 2 * imageHeight, imageWidth, imageHeight, null);
+            g.drawImage(imageArray[Cubemap.NEGY], imageWidth, 2 * imageHeight, imageWidth, imageHeight, null);
             txtWidth = m.stringWidth("-Y");
             txtHeight = m.getHeight();
             txtAscent = m.getAscent();

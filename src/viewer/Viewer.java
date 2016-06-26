@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
@@ -27,12 +26,12 @@ import javax.swing.UnsupportedLookAndFeelException;
 import math.Matrix33;
 
 /**
- *
+ * Main application window.
  * @author edu
  */
 public class Viewer extends JFrame {
 
-    private CubemapPanel cubemapPanel;
+    private CubemapViewer cubemapViewer;
     private JFileChooser openFileChooser;
     private SaveImageFileChooser saveFileChooser;
     private JMenuBar menuBar;
@@ -44,8 +43,6 @@ public class Viewer extends JFrame {
     private JCheckBoxMenuItem showReference;
     private JCheckBoxMenuItem showInfo;
     private JMenuItem showUnwrapped;
-    private JCheckBoxMenuItem nearest;
-    private JCheckBoxMenuItem bilinear;
     private JMenuItem resetOrientation;
     private JCheckBoxMenuItem invertMouse;
     private JMenu helpMenu;
@@ -57,7 +54,7 @@ public class Viewer extends JFrame {
         addWindowListener(new WindowAdapter(){
             @Override
             public void windowClosing(WindowEvent e) {
-                cubemapPanel.release();
+                cubemapViewer.release();
             }
         });
         openFileChooser = new JFileChooser(System.getProperty("user.home"));
@@ -97,7 +94,7 @@ public class Viewer extends JFrame {
         exit.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e){
-                cubemapPanel.release();
+                cubemapViewer.release();
                 System.exit(0);
             }
         });
@@ -110,7 +107,7 @@ public class Viewer extends JFrame {
         showReference.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
+                CubemapRenderer cubemapRenderer = cubemapViewer.getCubemapRenderer();
                 boolean showReference = cubemapRenderer.isShowReference();
                 cubemapRenderer.showReference(!showReference);
             }
@@ -122,8 +119,9 @@ public class Viewer extends JFrame {
         showInfo.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                boolean showInfo = cubemapPanel.isShowInfo();
-                cubemapPanel.setShowInfo(!showInfo);
+                CubemapRenderer cubemapRenderer = cubemapViewer.getCubemapRenderer();
+                boolean showInfo = cubemapRenderer.isShowInfo();
+                cubemapRenderer.setShowInfo(!showInfo);
             }
         });
         optionsMenu.add(showInfo);
@@ -131,43 +129,18 @@ public class Viewer extends JFrame {
         showUnwrapped.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                UnwrappedDialog dialog = new UnwrappedDialog(Viewer.this, true, cubemapPanel.getCubemap());
+                UnwrappedDialog dialog = new UnwrappedDialog(Viewer.this, true, cubemapViewer.getCubemap());
                 dialog.setVisible(true);
             }
         });
         optionsMenu.add(showUnwrapped);
         optionsMenu.addSeparator();
-        nearest = new JCheckBoxMenuItem("Nearest");
-        nearest.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, 0));
-        nearest.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
-                cubemapRenderer.setLerp(false);
-            }
-        });
-        optionsMenu.add(nearest);
-        bilinear = new JCheckBoxMenuItem("Bilinear");
-        bilinear.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, 0));
-        bilinear.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
-                cubemapRenderer.setLerp(true);
-            }
-            
-        });
-        optionsMenu.add(bilinear);
-        ButtonGroup bg = new ButtonGroup();
-        bg.add(nearest);
-        bg.add(bilinear);
-        optionsMenu.addSeparator();
         invertMouse = new JCheckBoxMenuItem("Invert mouse");
         invertMouse.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                boolean invertMouse = cubemapPanel.isInvertMouse();
-                cubemapPanel.setInvertMouse(!invertMouse);
+                boolean invertMouse = cubemapViewer.isInvertMouse();
+                cubemapViewer.setInvertMouse(!invertMouse);
             }
         });
         optionsMenu.add(invertMouse);
@@ -176,7 +149,7 @@ public class Viewer extends JFrame {
         resetOrientation.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e){
-                cubemapPanel.resetOrientation();
+                cubemapViewer.resetOrientation();
             }
         });
         optionsMenu.add(resetOrientation);
@@ -193,21 +166,19 @@ public class Viewer extends JFrame {
         });
         menuBar.add(helpMenu);
         setJMenuBar(menuBar);
-        cubemapPanel = new CubemapPanel();
-        cubemapPanel.setPreferredSize(new Dimension(800, 600));
-        cubemapPanel.init();
-        add(cubemapPanel);
+        cubemapViewer = new CubemapViewer();
+        cubemapViewer.setPreferredSize(new Dimension(800, 600));
+        cubemapViewer.init();
+        add(cubemapViewer);
         saveImage.setEnabled(false);
         showReference.setEnabled(false);
         showInfo.setEnabled(false);
         showUnwrapped.setEnabled(false);
-        nearest.setEnabled(false);
-        bilinear.setEnabled(false);
         resetOrientation.setEnabled(false);
         invertMouse.setEnabled(false);
         pack();
         setLocationRelativeTo(null);
-    }
+    }   
 
     private void loadCubemap(File cubemapDir){
         Cubemap cubemap = null;
@@ -221,29 +192,25 @@ public class Viewer extends JFrame {
             JOptionPane.showMessageDialog(this, "Couldn't load cubemap", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        Cubemap previousCubemap = cubemapPanel.getCubemap();
+        Cubemap previousCubemap = cubemapViewer.getCubemap();
         if (previousCubemap == null) {
-            CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
+            CubemapRenderer cubemapRenderer = cubemapViewer.getCubemapRenderer();
             saveImage.setEnabled(true);
             showReference.setEnabled(true);
             showInfo.setEnabled(true);
             showUnwrapped.setEnabled(true);
-            nearest.setEnabled(true);
-            bilinear.setEnabled(true);
             invertMouse.setEnabled(true);
             resetOrientation.setEnabled(true);
             showReference.setSelected(cubemapRenderer.isShowReference());
-            showInfo.setSelected(cubemapPanel.isShowInfo());
-            boolean lerp = cubemapRenderer.isLerp();
-            nearest.setSelected(!lerp);
-            bilinear.setSelected(lerp);
-            invertMouse.setSelected(cubemapPanel.isInvertMouse());
+            showInfo.setSelected(cubemapRenderer.isShowInfo());
+            invertMouse.setSelected(cubemapViewer.isInvertMouse());
         }
-        cubemapPanel.setCubemap(cubemap);
+        setTitle("Cubemap Viewer - " + cubemap.getName() + " (" + cubemap.getSize() + "x" + cubemap.getSize() + ")");
+        cubemapViewer.setCubemap(cubemap);
     }
 
     private void saveImage(File file) {
-        CubemapRenderer cubemapRenderer = cubemapPanel.getCubemapRenderer();
+        CubemapRenderer cubemapRenderer = cubemapViewer.getCubemapRenderer();
         Cubemap cubemap = cubemapRenderer.getCubemap();
         int width = cubemapRenderer.getWidth();
         int height = cubemapRenderer.getHeight();

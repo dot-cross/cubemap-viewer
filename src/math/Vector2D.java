@@ -71,20 +71,11 @@ public final class Vector2D {
     }
             
     public float dot(Vector2D vec) {
-        return x * vec.x + x * vec.y;
+        return x * vec.x + y * vec.y;
     }
     
-    public Vector2D getNormal(){
-        Vector2D normal = new Vector2D();
-        if(Math.abs(x) > Math.abs(y)){
-            normal.x = -y/x;
-            normal.y = 1.0f;
-        }else{
-            normal.x = 1.0f;
-            normal.y = -x/y;
-        }
-        normal.normalize();
-        return normal;
+    public Vector2D perp(){
+        return new Vector2D(-y, x);
     }
 
     public static float angle(Vector2D vec0, Vector2D vec1){
