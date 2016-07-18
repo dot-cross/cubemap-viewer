@@ -32,7 +32,8 @@ public class CubemapRenderer extends Thread {
         public static final int RP_REFERENCE = 1 << 4;
         public static final int RP_LERP = 1 << 5;
         public static final int RP_SHOW_INFO = 1 << 6;
-        public static final int RP_ALL = RP_CUBEMAP | RP_WINDOW_SIZE | RP_FOV | RP_ORIENTATION | RP_REFERENCE | RP_LERP | RP_SHOW_INFO;
+        public static final int RP_REF_COLOR = 1 << 7;
+        public static final int RP_ALL = RP_CUBEMAP | RP_WINDOW_SIZE | RP_FOV | RP_ORIENTATION | RP_REFERENCE | RP_LERP | RP_SHOW_INFO | RP_REF_COLOR;
         public int flags;
         public Cubemap cubemap;
         public int width, height;
@@ -41,12 +42,14 @@ public class CubemapRenderer extends Thread {
         public boolean showReference;
         public boolean lerp;
         public boolean showInfo;
+        public int refColor;
         
         public RenderParams(){
             fov = 75.0f;
             orientation = new Matrix33(1.0f);
             lerp = true;
             showInfo = true;
+            refColor = 0x000000FF;
         }
 
         public RenderParams copy(){
@@ -60,6 +63,7 @@ public class CubemapRenderer extends Thread {
             copy.showReference = showReference;
             copy.lerp = lerp;
             copy.showInfo = showInfo;
+            copy.refColor = refColor;
             return copy;
         }
     }
@@ -76,6 +80,7 @@ public class CubemapRenderer extends Thread {
     private float windowBottom, windowTop, yRange;
     private final Matrix33 orientation;
     private boolean showReference, showInfo, lerp;
+    private int refColor;
     private boolean alive;
     private int avalaibleProcessors;
     private ImageProcessor processors[];
@@ -100,6 +105,7 @@ public class CubemapRenderer extends Thread {
         orientation = new Matrix33(1.0f);
         showInfo = true;
         lerp = true;
+        refColor = 0x000000FF;
     }
     
     /**
@@ -309,7 +315,7 @@ public class CubemapRenderer extends Thread {
     
     /**
      * Checks if text info (fps, fov, filter) is enabled from current render parameters.
-     * @return true if 
+     * @return true if showing info, false otherwise
      */
     public boolean isShowInfo(){
         boolean value;
@@ -321,7 +327,7 @@ public class CubemapRenderer extends Thread {
     
     /**
      * Enable/Disable drawing of text info (fps, fov, filter) on rendered image.
-     * @param showInfo 
+     * @param showInfo true to show info, false otherwise.
      */
     public void setShowInfo(boolean showInfo){
         synchronized(rp){
@@ -330,6 +336,29 @@ public class CubemapRenderer extends Thread {
         }
     }
 
+    /**
+     * Get reference color from current render parameters.
+     * @return Reference color as 32 bits integer
+     */
+    public int getRefColor(){
+        int color;
+        synchronized(rp){
+            color = rp.refColor;
+        }
+        return color;
+    }
+    
+    /**
+     * Set new reference color to be processed.
+     * @param color Reference color as 32 bit integer
+     */
+    public void setRefColor(int color){
+        synchronized(rp){
+            rp.flags |= RenderParams.RP_REF_COLOR;
+            rp.refColor = color;
+        }
+    }
+    
     /**
      * Update frames per second.
      */
@@ -407,6 +436,9 @@ public class CubemapRenderer extends Thread {
                 }
                 if((newRP.flags & RenderParams.RP_REFERENCE) != 0){
                     showReference = newRP.showReference;
+                }
+                if((newRP.flags & RenderParams.RP_REF_COLOR) != 0){
+                    refColor = newRP.refColor;
                 }
                 if((newRP.flags & RenderParams.RP_LERP) != 0){
                     lerp = newRP.lerp;
@@ -524,7 +556,7 @@ public class CubemapRenderer extends Thread {
                                 nc.x = (x + 0.5f) * oneOverWidth;
                                 inDir.x = windowLeft + xRange * nc.x;
                                 orientation.mult(inDir, outDir);
-                                colorBuffer[y * width + x] = cubemap.sampleCubemapRef(outDir, lerp);
+                                colorBuffer[y * width + x] = cubemap.sampleCubemapRef(outDir, lerp, refColor);
                             }
                         }
                     }
@@ -546,12 +578,13 @@ public class CubemapRenderer extends Thread {
      * @param orientation Orientation matrix.
      * @param fov Field of view.
      * @param showReference If the cubemap reference will be drawn on rendered image.
+     * @param refColor Color of cubemap reference
      * @param lerp If linear interpolation will be used.
      * @param width Width of rendered image.
      * @param height Height of rendered image.
      * @return rendered image 
      */
-    public static final BufferedImage render(Cubemap cubemap, Matrix33 orientation, float fov, boolean showReference, boolean lerp, int width, int height){
+    public static final BufferedImage render(Cubemap cubemap, Matrix33 orientation, float fov, boolean showReference, int refColor, boolean lerp, int width, int height){
         if(cubemap == null){
             throw new NullPointerException();
         }
@@ -606,7 +639,7 @@ public class CubemapRenderer extends Thread {
                     nc.x = (x + 0.5f) * oneOverWidth;
                     inDir.x = windowLeft + xRange * nc.x;
                     orientation.mult(inDir, outDir);
-                    buffer[y * width + x] = cubemap.sampleCubemapRef(outDir, lerp);
+                    buffer[y * width + x] = cubemap.sampleCubemapRef(outDir, lerp, refColor);
                 }
             }
         }

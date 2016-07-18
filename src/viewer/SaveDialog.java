@@ -1,5 +1,7 @@
 package viewer;
 
+import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,12 +13,13 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 /**
- *
+ * Save dialog for screenshots.
  * @author edu
  */
 public class SaveDialog extends JDialog {
@@ -29,6 +32,8 @@ public class SaveDialog extends JDialog {
     private JTextField heightTextField;
     private JLabel fovLabel;
     private JTextField fovTextField;
+    private JLabel refColorLabel;
+    private ColorPicker colorPicker;
     private JCheckBox referenceCheckBox;
     private JCheckBox lerpCheckBox;
     private JButton saveButton;
@@ -37,13 +42,15 @@ public class SaveDialog extends JDialog {
     private boolean showReference;
     private boolean lerp;
     private int outputWidth, outputHeight;
+    private int refColor;
     private int returnStatus =  RET_CANCEL;
     
-    public SaveDialog(JFrame parent, boolean modal, int outputWidth, int outputHeight, float fov,  boolean showReference, boolean lerp){
+    public SaveDialog(JFrame parent, boolean modal, int outputWidth, int outputHeight, float fov,  boolean lerp, boolean showReference, int refColor){
         super(parent, modal);
         setTitle("Save Options");
         this.outputWidth = outputWidth;
         this.outputHeight = outputHeight;
+        this.refColor = refColor;
         this.fov = fov;
         this.lerp = lerp;
         this.showReference = showReference;
@@ -70,6 +77,11 @@ public class SaveDialog extends JDialog {
         fovTextField.setText(String.valueOf(fov));
         panel.add(fovTextField);
 
+        refColorLabel = new JLabel("Ref Color:");
+        panel.add(refColorLabel);
+        colorPicker = new ColorPicker(new Color(refColor));
+        panel.add(colorPicker);
+        
         referenceCheckBox = new JCheckBox("Show reference", showReference);
         referenceCheckBox.addItemListener(new ItemListener() {
             @Override
@@ -143,6 +155,10 @@ public class SaveDialog extends JDialog {
         return outputHeight;
     }
     
+    public int getRefColor(){
+        return refColor;
+    }
+    
     private boolean validateInput(){
         try{
             outputWidth = Integer.parseInt(widthTextField.getText());
@@ -174,6 +190,44 @@ public class SaveDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "Invalid value for Field of View. Valid range [2, 175]", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
+        refColor = colorPicker.getColor().getRGB();
         return true;
     }
+}
+
+class ColorPicker extends JButton implements ActionListener {
+
+    private Color color;
+
+    public ColorPicker(Color color) {
+        this.color = color;
+        addActionListener(this);
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+        repaint();
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    @Override
+    public void paintComponent(Graphics g) {
+        if (color != null) {
+            g.setColor(color);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        Color newColor = JColorChooser.showDialog(this, "Pick a color", color);
+        if (newColor != null) {
+            color = newColor;
+            repaint();
+        }
+    }
+
 }

@@ -446,9 +446,10 @@ public class Cubemap {
      * Sample cubemap and reference with vector.
      * @param dir 3D vector.
      * @param linear true to use bilinear interpolation, false otherwise.
+     * @param ref Color for reference as 32 bits integer
      * @return Color as 32 bits integer. 
      */
-    public int sampleCubemapRef(Vector3D dir, boolean linear) {
+    public int sampleCubemapRef(Vector3D dir, boolean linear, int ref) {
         float xuSign, xvSign, xAbs;
         float yuSign, yvSign, yAbs;
         float zuSign, zvSign, zAbs;
@@ -510,7 +511,7 @@ public class Cubemap {
         float nv = 0.5f * vSign * v / maxAxis + 0.5f;
 
         if(reference(nu, nv, maxIndex)){
-            return 0x000000FF;
+            return ref;
         }              
         if(linear){
             return sample2DLinear(data, nu, nv);

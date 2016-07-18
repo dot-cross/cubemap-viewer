@@ -1,5 +1,6 @@
 package viewer;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -14,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -41,6 +43,7 @@ public class Viewer extends JFrame {
     private JMenuItem exit;
     private JMenu optionsMenu;
     private JCheckBoxMenuItem showReference;
+    private JMenuItem referenceColor;
     private JCheckBoxMenuItem showInfo;
     private JMenuItem showUnwrapped;
     private JMenuItem resetOrientation;
@@ -102,6 +105,19 @@ public class Viewer extends JFrame {
         menuBar.add(fileMenu);
         
         optionsMenu = new JMenu("Options");
+        referenceColor = new JMenuItem("Reference color");
+        referenceColor.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e){
+                CubemapRenderer renderer = cubemapViewer.getCubemapRenderer();
+                int prevColor = renderer.getRefColor();
+                Color color = JColorChooser.showDialog(Viewer.this, "Pick a color", new Color(prevColor));
+                if(color != null){
+                    renderer.setRefColor(color.getRGB());
+                }
+            }
+        });
+        optionsMenu.add(referenceColor);
         showReference = new JCheckBoxMenuItem("Show reference");
         showReference.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0));
         showReference.addActionListener(new ActionListener(){
@@ -112,7 +128,6 @@ public class Viewer extends JFrame {
                 cubemapRenderer.showReference(!showReference);
             }
         });
-
         optionsMenu.add(showReference);
         showInfo = new JCheckBoxMenuItem("Show Info");
         showInfo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, 0));
@@ -171,6 +186,7 @@ public class Viewer extends JFrame {
         cubemapViewer.init();
         add(cubemapViewer);
         saveImage.setEnabled(false);
+        referenceColor.setEnabled(false);
         showReference.setEnabled(false);
         showInfo.setEnabled(false);
         showUnwrapped.setEnabled(false);
@@ -196,6 +212,7 @@ public class Viewer extends JFrame {
         if (previousCubemap == null) {
             CubemapRenderer cubemapRenderer = cubemapViewer.getCubemapRenderer();
             saveImage.setEnabled(true);
+            referenceColor.setEnabled(true);
             showReference.setEnabled(true);
             showInfo.setEnabled(true);
             showUnwrapped.setEnabled(true);
@@ -218,7 +235,8 @@ public class Viewer extends JFrame {
         boolean lerp = cubemapRenderer.isLerp();
         Matrix33 orientation = cubemapRenderer.getOrientation();
         float fov = cubemapRenderer.getFov();
-        SaveDialog saveDialog = new SaveDialog(Viewer.this, true, width, height, fov, reference, lerp);
+        int refColor = cubemapRenderer.getRefColor();
+        SaveDialog saveDialog = new SaveDialog(Viewer.this, true, width, height, fov, lerp, reference, refColor);
         saveDialog.setVisible(true);
         if (saveDialog.getReturnStatus() == SaveDialog.RET_CANCEL) {
             return;
@@ -227,7 +245,8 @@ public class Viewer extends JFrame {
         height = saveDialog.getOutputHeight();
         reference = saveDialog.isShowReference();
         lerp = saveDialog.isLerp();
-        BufferedImage outputImage = CubemapRenderer.render(cubemap, orientation, fov, reference, lerp, width, height);
+        refColor = saveDialog.getRefColor();
+        BufferedImage outputImage = CubemapRenderer.render(cubemap, orientation, fov, reference, refColor, lerp, width, height);
         String format = "jpg";
         String fileName = file.getName().toLowerCase();
         if(fileName.endsWith(".jpg")){
