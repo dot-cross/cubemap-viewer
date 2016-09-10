@@ -1,7 +1,7 @@
 package math;
 
 /**
- *
+ * Some math utilities
  * @author edu
  */
 public class MathUtils {

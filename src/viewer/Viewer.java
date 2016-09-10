@@ -204,10 +204,6 @@ public class Viewer extends JFrame {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        if (cubemap == null) {
-            JOptionPane.showMessageDialog(this, "Couldn't load cubemap", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
         Cubemap previousCubemap = cubemapViewer.getCubemap();
         if (previousCubemap == null) {
             CubemapRenderer cubemapRenderer = cubemapViewer.getCubemapRenderer();

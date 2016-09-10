@@ -520,7 +520,31 @@ public class Cubemap {
         }
     }
     
-    
+    /**
+     * Load an image, validate if it is square, and convert to BufferedImage.TYPE_INT_RGB if necessary.
+     * @param imageFile The image file
+     * @return The read image
+     * @throws IOException If couldn't open the file or if not a square image.
+     */
+    private static BufferedImage readImageAsRgb(File imageFile) throws IOException {
+        String fileName = imageFile.getName();
+        BufferedImage image = ImageIO.read(imageFile);
+        if(image == null){
+            throw new IOException("Couldn't open file: "+ fileName);
+        }
+        if(image.getWidth() != image.getHeight()){
+            throw new IOException(fileName + " is not a square image");
+        }
+        if(image.getType() != BufferedImage.TYPE_INT_RGB) {
+            BufferedImage imageRgb = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
+            Graphics g = imageRgb.createGraphics();
+            g.drawImage(image, 0, 0, null);
+            g.dispose();
+            image = imageRgb;
+        }
+        return image;
+    }
+        
     /**
      * Load images from specified directory and returns a cubemap object.
      * @param path Path to valid cubemap directory.
@@ -573,90 +597,17 @@ public class Cubemap {
         if(negZFile == null){
             throw new IOException("Couldn't find neither negz nor back");
         }
-        BufferedImage imageTmp;
-        String fileName;
-        Graphics g;
-        // Load Positive X
-        fileName = posXFile.getName();
-        imageTmp = ImageIO.read(posXFile);
-        if(imageTmp == null){
-            throw new IOException("Couldn't open file: "+ fileName);
-        }
-        if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new IOException(fileName + " is not a square image");
-        }
-        BufferedImage posXImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        g = posXImage.createGraphics();
-        g.drawImage(imageTmp, 0, 0, null);
-        g.dispose();
-        // Load Negative X
-        fileName = negXFile.getName();
-        imageTmp = ImageIO.read(negXFile);
-        if(imageTmp == null){
-            throw new IOException("Couldn't open file: "+ fileName);
-        }
-        if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new IOException(fileName + " is not a square image");
-        }
-        BufferedImage negXImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        g = negXImage.createGraphics();
-        g.drawImage(imageTmp, 0, 0, null);
-        g.dispose();
-        // Positive Y
-        fileName = posYFile.getName();
-        imageTmp = ImageIO.read(posYFile);
-        if(imageTmp == null){
-            throw new IOException("Couldn't open file: "+ fileName);
-        }
-        if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new IOException(fileName + " is not a square image");
-        }
-        BufferedImage posYImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        g = posYImage.createGraphics();
-        g.drawImage(imageTmp, 0, 0, null);
-        g.dispose();
-        // Negative Y
-        fileName = negYFile.getName();
-        imageTmp = ImageIO.read(negYFile);
-        if(imageTmp == null){
-            throw new IOException("Couldn't open file: "+ fileName);
-        }
-        if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new IOException(fileName + " is not a square image");
-        }
-        BufferedImage negYImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        g = negYImage.createGraphics();
-        g.drawImage(imageTmp, 0, 0, null);
-        g.dispose();
-        // Positive Z
-        fileName = posZFile.getName();
-        imageTmp = ImageIO.read(posZFile);
-        if(imageTmp == null){
-            throw new IOException("Couldn't open file: "+ fileName);
-        }
-        if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new IOException(fileName + " is not a square image");
-        }
-        BufferedImage posZImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        g = posZImage.createGraphics();
-        g.drawImage(imageTmp, 0, 0, null);
-        g.dispose();
-        // Negative Z
-        fileName = negZFile.getName();
-        imageTmp = ImageIO.read(negZFile);
-        if(imageTmp == null){
-            throw new IOException("Couldn't open file: "+ fileName);
-        }
-        if(imageTmp.getWidth() != imageTmp.getHeight()){
-            throw new IOException(fileName + " is not a square image");
-        }
-        BufferedImage negZImage = new BufferedImage(imageTmp.getWidth(), imageTmp.getHeight(), BufferedImage.TYPE_INT_RGB);
-        g = negZImage.createGraphics();
-        g.drawImage(imageTmp, 0, 0, null);
-        g.dispose();
+        //Load images and construct cubemap
+        BufferedImage posXImage, negXImage, posYImage, negYImage, posZImage, negZImage;
+        posXImage = readImageAsRgb(posXFile);
+        negXImage = readImageAsRgb(negXFile);
+        posYImage = readImageAsRgb(posYFile);
+        negYImage = readImageAsRgb(negYFile);
+        posZImage = readImageAsRgb(posZFile);
+        negZImage = readImageAsRgb(negZFile);
         if(posXImage.getWidth() != negXImage.getWidth() || negXImage.getWidth() != posYImage.getWidth() ||
-                posYImage.getWidth() != negYImage.getWidth() || negYImage.getWidth() != posZImage.getWidth() ||
-                posZImage.getWidth() != negZImage.getWidth()){
+           posYImage.getWidth() != negYImage.getWidth() || negYImage.getWidth() != posZImage.getWidth() ||
+           posZImage.getWidth() != negZImage.getWidth()){
             throw new IOException("The 6 images have not the same size");
         }
         return new Cubemap(cubemapDir.getName(), posXImage, negXImage, posYImage, negYImage, posZImage, negZImage);
