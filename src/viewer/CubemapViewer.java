@@ -88,9 +88,9 @@ public class CubemapViewer extends JComponent {
     public void setInvertMouse(boolean invert){
         this.invertMouse = invert;
         if(invert){
-            cameraAdapter.invert = -1.0f;
-        }else{
             cameraAdapter.invert = 1.0f;
+        }else{
+            cameraAdapter.invert = -1.0f;
         }
     }
     
@@ -101,7 +101,12 @@ public class CubemapViewer extends JComponent {
         angleX = 0.0f;
         angleY = 0.0f;
         if(cubemapRenderer != null){
-            cubemapRenderer.setOrientation(Matrix33.identity());
+            int renderType = cubemapRenderer.getRenderType();
+            if(renderType == CubemapRenderer.RT_PERSPECTIVE){
+                cubemapRenderer.setOrientation(Matrix33.identity());
+            }else if(renderType == CubemapRenderer.RT_EQUIRECT){
+                cubemapRenderer.setEquirectOffset(0);
+            }
         }
     }
     
@@ -157,7 +162,8 @@ public class CubemapViewer extends JComponent {
     class CameraAdapter extends MouseAdapter {
 
         private int startX, startY;
-        public float invert = 1.0f;
+        public float invert = -1.0f;
+        private int renderType;
         
         @Override
         public void mousePressed(MouseEvent e) {
@@ -168,6 +174,7 @@ public class CubemapViewer extends JComponent {
             startY = e.getY();
             //Disable lerp before start mouse dragging.
             cubemapRenderer.setLerp(false);
+            renderType = cubemapRenderer.getRenderType();
         }
 
         @Override
@@ -177,18 +184,24 @@ public class CubemapViewer extends JComponent {
             }
             int endX = e.getX(), endY = e.getY();
             int windowWidth = getWidth(), windowHeight = getHeight();
-            float aspectRatio = (float)windowWidth / (float)windowHeight;
-            float fov = cubemapRenderer.getFov();
             float diffX = endX - startX, diffY = endY - startY;
             diffX *= invert; diffY *= invert;
             startX = endX; startY = endY;
-            angleY += fov * (float) diffX / (float) windowWidth;
-            angleX += (fov / aspectRatio) * (float) diffY / (float) windowHeight;
-            angleX = MathUtils.clamp(angleX, -90.0f, 90.0f);
-            Matrix33 rotX = Matrix33.rotateX((float) Math.toRadians(angleX));
-            Matrix33 rotY = Matrix33.rotateY((float) Math.toRadians(angleY));
-            Matrix33 orientation = rotY.mult(rotX);
-            cubemapRenderer.setOrientation(orientation);
+            if(renderType == CubemapRenderer.RT_PERSPECTIVE) {
+                float aspectRatio = (float)windowWidth / (float)windowHeight;
+                float fov = cubemapRenderer.getFov();
+                angleY += fov * (float) diffX / (float) windowWidth;
+                angleX += (fov / aspectRatio) * (float) diffY / (float) windowHeight;
+                angleX = MathUtils.clamp(angleX, -90.0f, 90.0f);
+                Matrix33 rotX = Matrix33.rotateX((float) Math.toRadians(angleX));
+                Matrix33 rotY = Matrix33.rotateY((float) Math.toRadians(angleY));
+                Matrix33 orientation = rotY.mult(rotX);
+                cubemapRenderer.setOrientation(orientation);
+            }else if(renderType == CubemapRenderer.RT_EQUIRECT){
+                float offset = cubemapRenderer.getEquirectOffset();
+                offset += diffX / windowWidth;
+                cubemapRenderer.setEquirectOffset(offset);
+            }
         }
         
         @Override
@@ -205,9 +218,12 @@ public class CubemapViewer extends JComponent {
             if(cubemapRenderer == null){
                 return;
             }
-            float fov = cubemapRenderer.getFov();
-            fov += e.getWheelRotation();
-            cubemapRenderer.setFov(fov);
+            int rt = cubemapRenderer.getRenderType();
+            if(rt == CubemapRenderer.RT_PERSPECTIVE) {
+                float fov = cubemapRenderer.getFov();
+                fov += e.getWheelRotation();
+                cubemapRenderer.setFov(fov);
+            }
         }
     }
 

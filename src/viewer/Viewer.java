@@ -45,7 +45,9 @@ public class Viewer extends JFrame {
     private JCheckBoxMenuItem showReference;
     private JMenuItem referenceColor;
     private JCheckBoxMenuItem showInfo;
-    private JMenuItem showUnwrapped;
+    private JMenuItem viewPerspective;
+    private JMenuItem viewEquirect;
+    private JMenuItem viewUnwrapped;
     private JMenuItem resetOrientation;
     private JCheckBoxMenuItem invertMouse;
     private JMenu helpMenu;
@@ -105,6 +107,34 @@ public class Viewer extends JFrame {
         menuBar.add(fileMenu);
         
         optionsMenu = new JMenu("Options");
+        viewPerspective = new JMenuItem("Perspective");
+        viewPerspective.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                CubemapRenderer cubemapRenderer = cubemapViewer.getCubemapRenderer();
+                cubemapRenderer.setRenderType(CubemapRenderer.RT_PERSPECTIVE);
+            }
+        });
+        optionsMenu.add(viewPerspective);
+        viewEquirect = new JMenuItem("Equirectangular");
+        viewEquirect.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                CubemapRenderer cubemapRenderer = cubemapViewer.getCubemapRenderer();
+                cubemapRenderer.setRenderType(CubemapRenderer.RT_EQUIRECT);
+            }
+        });
+        optionsMenu.add(viewEquirect);
+        viewUnwrapped = new JMenuItem("Unwrapped");
+        viewUnwrapped.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                CubemapRenderer cubemapRenderer = cubemapViewer.getCubemapRenderer();
+                cubemapRenderer.setRenderType(CubemapRenderer.RT_UNWRAPPED);
+            }
+        });
+        optionsMenu.add(viewUnwrapped);
+        optionsMenu.addSeparator();
         referenceColor = new JMenuItem("Reference color");
         referenceColor.addActionListener(new ActionListener(){
             @Override
@@ -140,15 +170,6 @@ public class Viewer extends JFrame {
             }
         });
         optionsMenu.add(showInfo);
-        showUnwrapped = new JMenuItem("Show unwrapped image");
-        showUnwrapped.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                UnwrappedDialog dialog = new UnwrappedDialog(Viewer.this, true, cubemapViewer.getCubemap());
-                dialog.setVisible(true);
-            }
-        });
-        optionsMenu.add(showUnwrapped);
         optionsMenu.addSeparator();
         invertMouse = new JCheckBoxMenuItem("Invert mouse");
         invertMouse.addActionListener(new ActionListener(){
@@ -176,7 +197,7 @@ public class Viewer extends JFrame {
         about.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e){
-                JOptionPane.showMessageDialog(Viewer.this, "Eduardo Guerra - 2015", "About", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(Viewer.this, "Eduardo Guerra  2015 - 2017", "About", JOptionPane.INFORMATION_MESSAGE);
             }
         });
         menuBar.add(helpMenu);
@@ -189,7 +210,9 @@ public class Viewer extends JFrame {
         referenceColor.setEnabled(false);
         showReference.setEnabled(false);
         showInfo.setEnabled(false);
-        showUnwrapped.setEnabled(false);
+        viewPerspective.setEnabled(false);
+        viewEquirect.setEnabled(false);
+        viewUnwrapped.setEnabled(false);
         resetOrientation.setEnabled(false);
         invertMouse.setEnabled(false);
         pack();
@@ -211,7 +234,13 @@ public class Viewer extends JFrame {
             referenceColor.setEnabled(true);
             showReference.setEnabled(true);
             showInfo.setEnabled(true);
-            showUnwrapped.setEnabled(true);
+            viewPerspective.setEnabled(true);
+            viewEquirect.setEnabled(true);
+            viewUnwrapped.setEnabled(true);
+            int renderType = cubemapRenderer.getRenderType();
+            viewPerspective.setSelected(renderType == CubemapRenderer.RT_PERSPECTIVE);
+            viewEquirect.setSelected(renderType == CubemapRenderer.RT_EQUIRECT);
+            viewUnwrapped.setSelected(renderType == CubemapRenderer.RT_UNWRAPPED);
             invertMouse.setEnabled(true);
             resetOrientation.setEnabled(true);
             showReference.setSelected(cubemapRenderer.isShowReference());
@@ -224,15 +253,18 @@ public class Viewer extends JFrame {
 
     private void saveImage(File file) {
         CubemapRenderer cubemapRenderer = cubemapViewer.getCubemapRenderer();
+        int renderType = cubemapRenderer.getRenderType();
         Cubemap cubemap = cubemapRenderer.getCubemap();
         int width = cubemapRenderer.getWidth();
         int height = cubemapRenderer.getHeight();
         boolean reference = cubemapRenderer.isShowReference();
         boolean lerp = cubemapRenderer.isLerp();
         Matrix33 orientation = cubemapRenderer.getOrientation();
+        float offset = cubemapRenderer.getEquirectOffset();
         float fov = cubemapRenderer.getFov();
         int refColor = cubemapRenderer.getRefColor();
-        SaveDialog saveDialog = new SaveDialog(Viewer.this, true, width, height, fov, lerp, reference, refColor);
+        boolean editFov = renderType == CubemapRenderer.RT_PERSPECTIVE;
+        SaveDialog saveDialog = new SaveDialog(Viewer.this, true, width, height, fov, lerp, reference, refColor, editFov);
         saveDialog.setVisible(true);
         if (saveDialog.getReturnStatus() == SaveDialog.RET_CANCEL) {
             return;
@@ -242,7 +274,18 @@ public class Viewer extends JFrame {
         reference = saveDialog.isShowReference();
         lerp = saveDialog.isLerp();
         refColor = saveDialog.getRefColor();
-        BufferedImage outputImage = CubemapRenderer.render(cubemap, orientation, fov, reference, refColor, lerp, width, height);
+        BufferedImage outputImage = null;
+        switch (renderType) {
+            case CubemapRenderer.RT_PERSPECTIVE:
+                outputImage = CubemapRenderer.render(cubemap, orientation, fov, reference, refColor, lerp, width, height);
+                break;
+            case CubemapRenderer.RT_UNWRAPPED:
+                outputImage = CubemapRenderer.renderUnWrapped(cubemap, reference, refColor, width, height);
+                break;
+            case CubemapRenderer.RT_EQUIRECT:
+                outputImage = CubemapRenderer.renderEquirect(cubemap, reference, refColor, lerp, width, height, offset);
+                break;
+        }
         String format = "jpg";
         String fileName = file.getName().toLowerCase();
         if(fileName.endsWith(".jpg")){

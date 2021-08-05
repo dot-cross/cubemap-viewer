@@ -44,8 +44,9 @@ public class SaveDialog extends JDialog {
     private int outputWidth, outputHeight;
     private int refColor;
     private int returnStatus =  RET_CANCEL;
+    private boolean editFov;
     
-    public SaveDialog(JFrame parent, boolean modal, int outputWidth, int outputHeight, float fov,  boolean lerp, boolean showReference, int refColor){
+    public SaveDialog(JFrame parent, boolean modal, int outputWidth, int outputHeight, float fov,  boolean lerp, boolean showReference, int refColor, boolean editFov){
         super(parent, modal);
         setTitle("Save Options");
         this.outputWidth = outputWidth;
@@ -54,6 +55,7 @@ public class SaveDialog extends JDialog {
         this.fov = fov;
         this.lerp = lerp;
         this.showReference = showReference;
+        this.editFov = editFov;
         setResizable(false);
         JPanel panel = new JPanel();
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -71,15 +73,20 @@ public class SaveDialog extends JDialog {
         heightTextField.setText(String.valueOf(outputHeight));
         panel.add(heightTextField);
 
-        fovLabel = new JLabel("Field of view:");
-        panel.add(fovLabel);
-        fovTextField = new JTextField();
-        fovTextField.setText(String.valueOf(fov));
-        panel.add(fovTextField);
-
+        if(editFov) {
+            fovLabel = new JLabel("Field of view:");
+            fovLabel.setEnabled(editFov);
+            panel.add(fovLabel);
+            fovTextField = new JTextField();
+            fovTextField.setText(String.valueOf(fov));
+            fovTextField.setEnabled(editFov);
+            panel.add(fovTextField);
+        }
+       
         refColorLabel = new JLabel("Ref Color:");
         panel.add(refColorLabel);
         colorPicker = new ColorPicker(new Color(refColor));
+        
         panel.add(colorPicker);
         
         referenceCheckBox = new JCheckBox("Show reference", showReference);
@@ -180,15 +187,17 @@ public class SaveDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "Invalid value. Image Height <= 0", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        try{
-            fov = Float.parseFloat(fovTextField.getText());
-        }catch(NumberFormatException e){
-            JOptionPane.showMessageDialog(this, "Invalid value for Field of View", "Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        if(fov < 2.0f || fov > 175.0f){
-            JOptionPane.showMessageDialog(this, "Invalid value for Field of View. Valid range [2, 175]", "Error", JOptionPane.ERROR_MESSAGE);
-            return false;
+        if(editFov){
+            try{
+                fov = Float.parseFloat(fovTextField.getText());
+            }catch(NumberFormatException e){
+                JOptionPane.showMessageDialog(this, "Invalid value for Field of View", "Error", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            if(fov < 2.0f || fov > 175.0f){
+                JOptionPane.showMessageDialog(this, "Invalid value for Field of View. Valid range [2, 175]", "Error", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
         }
         refColor = colorPicker.getColor().getRGB();
         return true;
