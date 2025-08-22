@@ -1,6 +1,11 @@
 # cubemap-viewer
 A cubemap viewer written in Java. All the rendering is done in software.
-![ScreenShot](screenshots/cubemap_viewer.jpg)
+#### Perspective Mode:
+![ScreenShot](screenshots/cubemap_viewer1.jpg)
+#### Equirectangular Mode:
+![ScreenShot](screenshots/cubemap_viewer2.jpg)
+#### Unwrapped Mode:
+![ScreenShot](screenshots/cubemap_viewer3.jpg)
 #### Cubemap convention
 Left-handed coordinate system.
 #### File name convention

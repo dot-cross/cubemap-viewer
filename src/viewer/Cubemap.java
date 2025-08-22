@@ -243,66 +243,52 @@ public class Cubemap {
     }
 
     /**
-     * Sample an image buffer. Linear interpolation.
+     * Sample an image buffer. Linear interpolation using fixed point arithmetic.
      * @param data Array of pixels
      * @param u Coordinate U
      * @param v Coordinate V
      * @return Color as 32 bit integer
      */
     private int sample2DLinear(int data[], float u, float v) {
+        int mu = (int) ((-0.5f + u * size) * 65536.0f);
+        int mv = (int) ((-0.5f + v * size) * 65536.0f);
 
-        float mu, mv, alpha, beta;
-        int u0, u1, v0, v1;
-        mu = -0.5f + u * size;
-        u0 = (int)Math.floor(mu);
-        u1 = u0+1;
-        alpha = mu - u0;
-        u0 = MathUtils.clamp(u0, 0, size_minus_one);
-        u1 = MathUtils.clamp(u1, 0, size_minus_one);
-        
-        mv = -0.5f + v * size;
-        v0 = (int)Math.floor(mv);
-        v1 = v0+1;
-        beta = mv - v0;
-        v0 = MathUtils.clamp(v0, 0, size_minus_one);
-        v1 = MathUtils.clamp(v1, 0, size_minus_one);
+        int u0 = MathUtils.clamp(mu >> 16, 0, size_minus_one);
+        int u1 = MathUtils.clamp(u0 + 1, 0, size_minus_one);
+        int alpha = mu & 0xFFFF;
+
+        int v0 = MathUtils.clamp(mv >> 16, 0, size_minus_one);
+        int v1 = MathUtils.clamp(v0 + 1, 0, size_minus_one);
+        int beta = mv & 0xFFFF;
+
+        // Flip vertical axis
         v0 = size_minus_one - v0;
         v1 = size_minus_one - v1;
-        
-        int s00 = data[v0 * size + u0];
-        float r00 = (s00 >> 16);
-        float g00 = (s00 >> 8) & 0xFF;
-        float b00 = (s00 & 0xFF);
-        
-        int s01 = data[v0 * size + u1];
-        float r01 = (s01 >> 16);
-        float g01 = (s01 >> 8) & 0xFF;
-        float b01 = (s01 & 0xFF);
 
-        float r0 =  MathUtils.lerp(r00, r01, alpha);
-        float g0 =  MathUtils.lerp(g00, g01, alpha);
-        float b0 =  MathUtils.lerp(b00, b01, alpha);
-        
-        int s10 = data[v1 * size + u0];
-        float r10 = (s10 >> 16);
-        float g10 = (s10 >> 8) & 0xFF;
-        float b10 = (s10 & 0xFF);
-        
-        int s11 = data[v1 * size + u1];
-        float r11 = (s11 >> 16);
-        float g11 = (s11 >> 8) & 0xFF;
-        float b11 = (s11 & 0xFF);
-        
-        float r1 =  MathUtils.lerp(r10, r11, alpha);
-        float g1 =  MathUtils.lerp(g10, g11, alpha);
-        float b1 =  MathUtils.lerp(b10, b11, alpha);
-        
-        int r,g,b;
-        r = (int)(MathUtils.lerp(r0, r1, beta) + 0.5f);
-        g = (int)(MathUtils.lerp(g0, g1, beta) + 0.5f);
-        b = (int)(MathUtils.lerp(b0, b1, beta) + 0.5f);
-        int color = r << 16 | g << 8 | b;
-        return color;
+        int idx00 = v0 * size + u0;
+        int idx01 = v0 * size + u1;
+        int idx10 = v1 * size + u0;
+        int idx11 = v1 * size + u1;
+
+        int s00 = data[idx00], s01 = data[idx01], s10 = data[idx10], s11 = data[idx11];
+
+        // Compute 16-bit weights
+        long w00 = (long) (65536 - alpha) * (65536 - beta);
+        long w01 = (long) alpha * (65536 - beta);
+        long w10 = (long) (65536 - alpha) * beta;
+        long w11 = (long) alpha * beta;
+
+        // Interpolate using 64-bit to avoid overflow
+        int r = (int) (((s00 >> 16 & 0xFF) * w00 + (s01 >> 16 & 0xFF) * w01
+                + (s10 >> 16 & 0xFF) * w10 + (s11 >> 16 & 0xFF) * w11) >> 32);
+
+        int g = (int) (((s00 >> 8 & 0xFF) * w00 + (s01 >> 8 & 0xFF) * w01
+                + (s10 >> 8 & 0xFF) * w10 + (s11 >> 8 & 0xFF) * w11) >> 32);
+
+        int b = (int) (((s00 & 0xFF) * w00 + (s01 & 0xFF) * w01
+                + (s10 & 0xFF) * w10 + (s11 & 0xFF) * w11) >> 32);
+
+        return (r << 16) | (g << 8) | b;
     }
 
     /**

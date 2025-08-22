@@ -197,7 +197,7 @@ public class Viewer extends JFrame {
         about.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e){
-                JOptionPane.showMessageDialog(Viewer.this, "Eduardo Guerra  2015 - 2017", "About", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(Viewer.this, "Eduardo Guerra  2015 - 2025", "About", JOptionPane.INFORMATION_MESSAGE);
             }
         });
         menuBar.add(helpMenu);
@@ -315,6 +315,7 @@ public class Viewer extends JFrame {
                     Logger.getLogger(Viewer.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 Viewer viewer = new Viewer();
+                viewer.setExtendedState(JFrame.MAXIMIZED_BOTH);
                 viewer.setVisible(true);
             }
         });
